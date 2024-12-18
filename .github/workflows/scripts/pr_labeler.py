@@ -51,13 +51,13 @@ def main() -> None:
     repo_name: str = os.environ["GITHUB_REPOSITORY"]
     pr_number: int = int(os.environ["GITHUB_PR_NUMBER"])
     event_action: str = os.environ["GITHUB_EVENT_ACTION"]
-    event_type: str = os.environ["GITHUB_EVENT_TYPE"]
+    event_name: str = os.environ["GITHUB_EVENT_NAME"]
 
     gh_client: Github = Github(github_token)
     repo: Repository = gh_client.get_repo(repo_name)
     pr: PullRequest = repo.get_pull(pr_number)
 
-    if event_type == "pull_request" and event_action in ("opened", "synchronize"):
+    if event_name == "pull_request" and event_action in ("opened", "synchronize"):
         set_pr_size(pr=pr)
 
 if __name__ == "__main__":
