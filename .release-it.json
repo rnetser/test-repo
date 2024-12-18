@@ -17,7 +17,9 @@
     "tagAnnotation": "Release ${version}",
     "tagArgs": [],
     "push": true,
-    "pushArgs": ["--follow-tags"],
+    "pushArgs": [
+      "--follow-tags"
+    ],
     "pushRepo": "",
     "changelog": "git log --no-merges --pretty=format:\"* %s (%h) by %an on %as\" ${from}...${to}"
   },

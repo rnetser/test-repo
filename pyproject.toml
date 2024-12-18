@@ -9,9 +9,50 @@ exclude = [".git", ".venv", ".mypy_cache", ".tox", "__pycache__"]
 
 [tool.mypy]
 check_untyped_defs = true
-disallow_any_generics = false
+disallow_any_generics = true
 disallow_incomplete_defs = true
 disallow_untyped_defs = true
 no_implicit_optional = true
 show_error_codes = true
 warn_unused_ignores = true
+ignore_missing_imports = true
+
+[tool.uv]
+dev-dependencies = [
+    "ipdb>=0.13.13",
+    "ipython>=8.12.3",
+]
+
+[tool.uv.sources]
+
+[project]
+requires-python = ">=3.9"
+name = "test-repo"
+version = "0.1.0"
+description = "Tests repo"
+authors = []
+license = {text = "Apache License (2.0)"}
+readme = "README.md"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "ipython>=8.18.1",
+    "openshift-python-utilities>=5.0.71",
+    "openshift-python-wrapper>=11.0.6",
+    "pytest-dependency>=0.6.0",
+    "pytest-progress",
+    "python-simple-logger",
+    "pyyaml",
+    "tenacity",
+    "types-requests>=2.32.0.20241016",
+    "requests",
+    "pytest-asyncio",
+    "syrupy",
+    "protobuf",
+    "grpcio-reflection",
+    "pygithub>=2.5.0",
+]
+
