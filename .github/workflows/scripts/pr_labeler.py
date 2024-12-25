@@ -100,12 +100,17 @@ def main() -> None:
     if not action:
         sys.exit("`ACTION` is not set in workflow")
 
+    for name, value in os.environ.items():
+        print("{0}: {1}".format(name, value))
+
     LOGGER.info(
         f"pr number: {pr_number}, event_action: {event_action}, event_name: {event_name}, action: {action}"
     )
 
     comment_body: str | None = None
-    if action == "add-remove-labels":
+    labels_action_name: str = "add-remove-labels"
+
+    if action == labels_action_name:
         comment_body: str = os.getenv("COMMENT_BODY")
         if not comment_body:
             sys.exit("`COMMENT_BODY` is not set")
@@ -117,7 +122,7 @@ def main() -> None:
     if action == "size-labeler":
         set_pr_size(pr=pr)
 
-    if action == "add-remove-labels":
+    if action == labels_action_name:
         add_remove_pr_label(pr=pr, comment_body=comment_body)
 
 
