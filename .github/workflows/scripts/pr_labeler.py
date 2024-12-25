@@ -90,7 +90,7 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
         # In case of the same label appears multiple times, the last one is used
         labels: dict[str, str] = {}
         for _label in user_labels:
-            labels[_label[0]] = _label[1]
+            labels[_label[0].replace("/", "")] = _label[1]
 
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
