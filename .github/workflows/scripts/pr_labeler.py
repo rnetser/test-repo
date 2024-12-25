@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from github import Github
 from github.PullRequest import PullRequest
@@ -47,14 +48,33 @@ def set_pr_size(pr: PullRequest) -> None:
             return
 
         if label.name.lower().startswith("size/"):
+            LOGGER.info(f"Removing label {label.name}")
             pr.remove_from_labels(label.name)
 
     LOGGER.info(f"New label: {size_label}")
     pr.add_to_labels(size_label)
 
 
-def add_remove_pr_label(pr: PullRequest, event: str, comment_body: str) -> None:
-    pass
+def add_remove_pr_label(pr: PullRequest, comment_body: str) -> None:
+    supported_labels: set[str] = {"/wip", "/lgtm", "/verified"}
+
+    # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
+    user_labels: list[tuple[str, str]] = re.findall(
+        rf"({'|'.join(supported_labels)})(\s*cancel)?", comment_body.lower()
+    )
+
+    # In case of the same label appears multiple times, the last one is used
+    labels: dict[str, str] = {}
+    for _label in user_labels:
+        labels[_label[0]] = _label[1]
+
+    for label, action in labels.items():
+        if action == "cancel":
+            LOGGER.info(f"Removing label {label}")
+            pr.remove_from_labels(label)
+        else:
+            LOGGER.info(f"Adding label {label}")
+            pr.add_to_labels(label)
 
 
 def main() -> None:
@@ -80,6 +100,10 @@ def main() -> None:
     if not action:
         sys.exit("`ACTION` is not set in workflow")
 
+    LOGGER.info(
+        f"pr number: {pr_number}, event_action: {event_action}, event_name: {event_name}, action: {action}"
+    )
+
     comment_body: str | None = None
     if action == "add-remove-labels":
         comment_body: str = os.getenv("COMMENT_BODY")
@@ -94,7 +118,7 @@ def main() -> None:
         set_pr_size(pr=pr)
 
     if action == "add-remove-labels":
-        add_remove_pr_label(pr=pr, event=event_action, comment_body=comment_body)
+        add_remove_pr_label(pr=pr, comment_body=comment_body)
 
 
 if __name__ == "__main__":
