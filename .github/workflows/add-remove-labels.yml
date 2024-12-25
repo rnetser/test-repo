@@ -9,15 +9,10 @@ permissions:
   pull-requests: write
   contents: write
 
-env:
-  supported_labels: '["/wip", "/verified", "/lgtm"]'
-
 jobs:
   add-remove-labels:
-
-    # To avoid running on issue_comment event triggered by a comment on an issue
     if: |
-      contains(fromJSON(${{ env.supported_labels }}), github.event.label.name) ||
+      contains(fromJSON('["wip", "verified", "lgtm"]'), github.event.label.name) ||
       contains(github.event.comment.body, '/wip') ||
       contains(github.event.comment.body, '/verified') ||
       contains(github.event.comment.body, '/lgtm')
