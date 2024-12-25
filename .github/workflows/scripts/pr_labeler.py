@@ -64,7 +64,9 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
 
     # Remove labels on new commit
     if event_name and event_name != "synchronize":
-        for label in pr.labels:
+        pr_labels = pr.labels
+        LOGGER.info(f"PR labels: {pr_labels}")
+        for label in pr_labels:
             if label.name.lower() in (wip_str, lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label.name}")
                 pr.remove_from_labels(label.name)
