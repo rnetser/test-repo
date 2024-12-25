@@ -56,7 +56,7 @@ def set_pr_size(pr: PullRequest) -> None:
 
 
 def add_remove_pr_label(pr: PullRequest, comment_body: str) -> None:
-    supported_labels: set[str] = {"/wip", "/lgtm", "/verified"}
+    supported_labels: set[str] = {"/wip", "/lgtm", "/verified", "/hold"}
 
     # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
     user_labels: list[tuple[str, str]] = re.findall(
@@ -96,16 +96,21 @@ def main() -> None:
     if not event_name:
         sys.exit("`GITHUB_EVENT_NAME` is not set")
 
-    action: str | None = os.getenv("GITHUB_ACTION")
+    action: str | None = os.getenv("ACTION")
     if not action:
         sys.exit("`ACTION` is not set in workflow")
+
+    for name, value in os.environ.items():
+        print("{0}: {1}".format(name, value))
 
     LOGGER.info(
         f"pr number: {pr_number}, event_action: {event_action}, event_name: {event_name}, action: {action}"
     )
 
     comment_body: str | None = None
-    if action == "add-remove-labels":
+    labels_action_name: str = "add-remove-labels"
+
+    if action == labels_action_name:
         comment_body: str = os.getenv("COMMENT_BODY")
         if not comment_body:
             sys.exit("`COMMENT_BODY` is not set")
@@ -117,7 +122,7 @@ def main() -> None:
     if action == "size-labeler":
         set_pr_size(pr=pr)
 
-    if action == "add-remove-labels":
+    if action == labels_action_name:
         add_remove_pr_label(pr=pr, comment_body=comment_body)
 
 
