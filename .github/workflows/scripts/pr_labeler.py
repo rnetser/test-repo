@@ -55,8 +55,27 @@ def set_pr_size(pr: PullRequest) -> None:
     pr.add_to_labels(size_label)
 
 
-def add_remove_pr_label(pr: PullRequest, comment_body: str) -> None:
-    supported_labels: set[str] = {"/wip", "/lgtm", "/verified", "/hold"}
+def add_remove_pr_label(pr: PullRequest, comment_body: str, event_name: str) -> None:
+    wip_str: str = "wip"
+    lgtm_str: str = "lgtm"
+    verified_str: str = "verified"
+    hold_str: str = "hold"
+    label_prefix: str = "/"
+
+    # Remove labels on new commit
+    if event_name != "synchronize":
+        for label in pr.labels:
+            if label.name.lower() in (wip_str, lgtm_str, verified_str):
+                LOGGER.info(f"Removing label {label.name}")
+                pr.remove_from_labels(label.name)
+        return
+
+    supported_labels: set[str] = {
+        f"{label_prefix}{wip_str}",
+        f"{label_prefix}{lgtm_str}",
+        f"{label_prefix}{verified_str}",
+        f"{label_prefix}{hold_str}",
+    }
 
     # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
     user_labels: list[tuple[str, str]] = re.findall(
@@ -123,7 +142,7 @@ def main() -> None:
         set_pr_size(pr=pr)
 
     if action == labels_action_name:
-        add_remove_pr_label(pr=pr, comment_body=comment_body)
+        add_remove_pr_label(pr=pr, comment_body=comment_body, event_name=event_name)
 
 
 if __name__ == "__main__":
