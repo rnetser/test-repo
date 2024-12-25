@@ -21,6 +21,7 @@ jobs:
 
     steps:
       - name: Acknowledge the request with thumbs up reaction
+        if: ${{ github.event.comment }}
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ github.event.comment.id }}
