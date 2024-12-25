@@ -5,7 +5,7 @@ from github.PullRequest import PullRequest
 from github.Repository import Repository
 from simple_logger.logger import get_logger
 
-LOGGER = get_logger(name=__name__)
+LOGGER = get_logger(name="pr_labeler")
 
 
 def get_pr_size(pr: PullRequest) -> int:
@@ -51,31 +51,45 @@ def set_pr_size(pr: PullRequest) -> None:
     pr.add_to_labels(size_label)
 
 
+def add_remove_pr_label(pr, event):
+    pass
+
+
 def main() -> None:
     github_token: str = os.getenv("GITHUB_TOKEN", "")
     if not github_token:
-        raise ValueError("GITHUB_TOKEN is not set")
+        sys.exit("GITHUB_TOKEN is not set")
 
     repo_name: str = os.environ["GITHUB_REPOSITORY"]
 
     pr_number: int = int(os.getenv("GITHUB_PR_NUMBER", 0))
     if not pr_number:
-        raise ValueError("GITHUB_PR_NUMBER is not set")
+        sys.exit("GITHUB_PR_NUMBER is not set")
 
     event_action: str = os.getenv("GITHUB_EVENT_ACTION", "")
     if not event_action:
-        raise ValueError("GITHUB_EVENT_ACTION is not set")
+        sys.exit("GITHUB_EVENT_ACTION is not set")
 
     event_name: str = os.getenv("GITHUB_EVENT_NAME", "")
     if not event_name:
-        raise ValueError("GITHUB_EVENT_NAME is not set")
+        sys.exit("GITHUB_EVENT_NAME is not set")
+
+    LOGGER.info(f"Event: {event_name}, Action: {event_action}")
 
     gh_client: Github = Github(github_token)
     repo: Repository = gh_client.get_repo(repo_name)
     pr: PullRequest = repo.get_pull(pr_number)
 
+    pr_label: str = os.getenv("PR_LABEL")
+    comment_body: str = os.getenv("COMMENT_BODY")
+
+    LOGGER.warning(f"PR Label: {pr_label} comment_body: {comment_body}")
+
     if event_name == "pull_request" and event_action in ("opened", "synchronize"):
         set_pr_size(pr=pr)
+
+    if event_name == "issue_comment":
+        add_remove_pr_label(pr=pr, event=event_action)
 
 
 if __name__ == "__main__":
