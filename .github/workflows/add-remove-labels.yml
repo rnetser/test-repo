@@ -1,6 +1,7 @@
 name: PR Add Remove Labels Based on user input
 on:
   issue_comment:
+    types: [created, edited, deleted]
   pull_request:
     types: [ labeled, unlabeled ]
 
@@ -10,15 +11,21 @@ permissions:
 
 jobs:
   add-remove-labels:
-#    if: |
-#      contains(fromJSON('["wip", "verified", "lgtm"]'), github.event.label.name) ||
-#      contains(github.event.comment.body, '/wip') ||
-#      contains(github.event.comment.body, '/verified') ||
-#      contains(github.event.comment.body, '/lgtm')
+    if: |
+      contains(fromJSON('["wip", "verified", "lgtm"]'), github.event.label.name) ||
+      contains(github.event.comment.body, '/wip') ||
+      contains(github.event.comment.body, '/verified') ||
+      contains(github.event.comment.body, '/lgtm')
 
     runs-on: ubuntu-latest
 
     steps:
+      - name: Acknowledge the request with thumbs up reaction
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: '+1'
+
       - uses: actions/checkout@v4
 
       - name: Set up Python
