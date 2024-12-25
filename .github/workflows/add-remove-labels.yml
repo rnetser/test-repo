@@ -40,7 +40,7 @@ jobs:
       - name: Run add remove labels
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_PR_NUMBER: ${{ github.event.action == issue_comment && github.event.issue.number || github.event.pull_request.number }}
+          GITHUB_PR_NUMBER: ${{ github.event.action == 'issue_comment' && github.event.issue.number || github.event.pull_request.number }}
           GITHUB_EVENT_ACTION: ${{ github.event.action }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           COMMENT_BODY: ${{ github.event.comment.body }}
