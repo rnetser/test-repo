@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 from github import Github
@@ -51,44 +53,48 @@ def set_pr_size(pr: PullRequest) -> None:
     pr.add_to_labels(size_label)
 
 
-def add_remove_pr_label(pr, event):
+def add_remove_pr_label(pr: PullRequest, event: str, comment_body: str) -> None:
     pass
 
 
 def main() -> None:
-    github_token: str = os.getenv("GITHUB_TOKEN", "")
+    github_token: str | None = os.getenv("GITHUB_TOKEN")
     if not github_token:
-        sys.exit("GITHUB_TOKEN is not set")
+        sys.exit("`GITHUB_TOKEN` is not set")
 
     repo_name: str = os.environ["GITHUB_REPOSITORY"]
 
-    pr_number: int = int(os.getenv("GITHUB_PR_NUMBER", 0))
+    pr_number: int | None = int(os.getenv("GITHUB_PR_NUMBER"))
     if not pr_number:
-        sys.exit("GITHUB_PR_NUMBER is not set")
+        sys.exit("`GITHUB_PR_NUMBER` is not set")
 
-    event_action: str = os.getenv("GITHUB_EVENT_ACTION", "")
+    event_action: str | None = os.getenv("GITHUB_EVENT_ACTION")
     if not event_action:
-        sys.exit("GITHUB_EVENT_ACTION is not set")
+        sys.exit("`GITHUB_EVENT_ACTION` is not set")
 
-    event_name: str = os.getenv("GITHUB_EVENT_NAME", "")
+    event_name: str | None = os.getenv("GITHUB_EVENT_NAME")
     if not event_name:
-        sys.exit("GITHUB_EVENT_NAME is not set")
+        sys.exit("`GITHUB_EVENT_NAME` is not set")
 
-    LOGGER.info(f"Event: {event_name}, Action: {event_action}")
+    action: str | None = os.getenv("GITHUB_ACTION")
+    if not action:
+        sys.exit("`ACTION` is not set in workflow")
+
+    comment_body: str | None = None
+    if action == "add-remove-labels":
+        comment_body: str = os.getenv("COMMENT_BODY")
+        if not comment_body:
+            sys.exit("`COMMENT_BODY` is not set")
 
     gh_client: Github = Github(github_token)
     repo: Repository = gh_client.get_repo(repo_name)
     pr: PullRequest = repo.get_pull(pr_number)
 
-    comment_body: str = os.getenv("COMMENT_BODY")
-
-    LOGGER.warning(f"comment_body: {comment_body}")
-
-    if event_name == "pull_request" and event_action in ("opened", "synchronize"):
+    if action == "size-labeler":
         set_pr_size(pr=pr)
 
-    if event_name == "issue_comment":
-        add_remove_pr_label(pr=pr, event=event_action)
+    if action == "add-remove-labels":
+        add_remove_pr_label(pr=pr, event=event_action, comment_body=comment_body)
 
 
 if __name__ == "__main__":
