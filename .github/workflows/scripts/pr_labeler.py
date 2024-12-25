@@ -96,7 +96,7 @@ def main() -> None:
     if not event_name:
         sys.exit("`GITHUB_EVENT_NAME` is not set")
 
-    action: str | None = os.getenv("GITHUB_ACTION")
+    action: str | None = os.getenv("ACTION")
     if not action:
         sys.exit("`ACTION` is not set in workflow")
 
