@@ -36,9 +36,9 @@ jobs:
       - name: Run size labeler
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_PR_NUMBER: ${{ github.github.event }}
+          GITHUB_PR_NUMBER: ${{ github.event.number }}
+          XX: ${{ github.event.issue.number }}
           GITHUB_EVENT_ACTION: ${{ github.event.action }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           COMMENT_BODY: ${{ github.event.comment.body }}
-          PR_LABEL: ${{ github.event.label.name }}
         run: uv run python .github/workflows/scripts/pr_labeler.py
