@@ -80,10 +80,9 @@ def main() -> None:
     repo: Repository = gh_client.get_repo(repo_name)
     pr: PullRequest = repo.get_pull(pr_number)
 
-    pr_label: str = os.getenv("PR_LABEL")
     comment_body: str = os.getenv("COMMENT_BODY")
 
-    LOGGER.warning(f"PR Label: {pr_label} comment_body: {comment_body}")
+    LOGGER.warning(f"comment_body: {comment_body}")
 
     if event_name == "pull_request" and event_action in ("opened", "synchronize"):
         set_pr_size(pr=pr)
