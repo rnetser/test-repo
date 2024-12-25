@@ -55,7 +55,7 @@ def set_pr_size(pr: PullRequest) -> None:
     pr.add_to_labels(size_label)
 
 
-def add_remove_pr_label(pr: PullRequest, comment_body: str, event_name: str) -> None:
+def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_name: str | None = None) -> None:
     wip_str: str = "wip"
     lgtm_str: str = "lgtm"
     verified_str: str = "verified"
@@ -63,40 +63,41 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str, event_name: str) -> 
     label_prefix: str = "/"
 
     # Remove labels on new commit
-    if event_name != "synchronize":
+    if event_name and event_name != "synchronize":
         for label in pr.labels:
             if label.name.lower() in (wip_str, lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label.name}")
                 pr.remove_from_labels(label.name)
         return
 
-    supported_labels: set[str] = {
-        f"{label_prefix}{wip_str}",
-        f"{label_prefix}{lgtm_str}",
-        f"{label_prefix}{verified_str}",
-        f"{label_prefix}{hold_str}",
-    }
+    if comment_body:
+        supported_labels: set[str] = {
+            f"{label_prefix}{wip_str}",
+            f"{label_prefix}{lgtm_str}",
+            f"{label_prefix}{verified_str}",
+            f"{label_prefix}{hold_str}",
+        }
 
-    # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
-    user_labels: list[tuple[str, str]] = re.findall(
-        rf"({'|'.join(supported_labels)})(\s*cancel)?", comment_body.lower()
-    )
+        # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
+        user_labels: list[tuple[str, str]] = re.findall(
+            rf"({'|'.join(supported_labels)})(\s*cancel)?", comment_body.lower()
+        )
 
-    LOGGER.info(f"User labels: {user_labels}")
+        LOGGER.info(f"User labels: {user_labels}")
 
-    # In case of the same label appears multiple times, the last one is used
-    labels: dict[str, str] = {}
-    for _label in user_labels:
-        labels[_label[0]] = _label[1]
+        # In case of the same label appears multiple times, the last one is used
+        labels: dict[str, str] = {}
+        for _label in user_labels:
+            labels[_label[0]] = _label[1]
 
-    LOGGER.info(f"Processing labels: {labels}")
-    for label, action in labels.items():
-        if action == "cancel":
-            LOGGER.info(f"Removing label {label}")
-            pr.remove_from_labels(label)
-        else:
-            LOGGER.info(f"Adding label {label}")
-            pr.add_to_labels(label)
+        LOGGER.info(f"Processing labels: {labels}")
+        for label, action in labels.items():
+            if action == "cancel":
+                LOGGER.info(f"Removing label {label}")
+                pr.remove_from_labels(label)
+            else:
+                LOGGER.info(f"Adding label {label}")
+                pr.add_to_labels(label)
 
 
 def main() -> None:
@@ -129,7 +130,7 @@ def main() -> None:
     comment_body: str | None = None
     labels_action_name: str = "add-remove-labels"
 
-    if action == labels_action_name:
+    if action == labels_action_name and event_action == "issue_comment":
         comment_body: str = os.getenv("COMMENT_BODY")
         if not comment_body:
             sys.exit("`COMMENT_BODY` is not set")
