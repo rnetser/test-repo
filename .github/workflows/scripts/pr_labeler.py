@@ -63,11 +63,14 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str) -> None:
         rf"({'|'.join(supported_labels)})(\s*cancel)?", comment_body.lower()
     )
 
+    LOGGER.info(f"User labels: {user_labels}")
+
     # In case of the same label appears multiple times, the last one is used
     labels: dict[str, str] = {}
     for _label in user_labels:
         labels[_label[0]] = _label[1]
 
+    LOGGER.info(f"Processing labels: {labels}")
     for label, action in labels.items():
         if action == "cancel":
             LOGGER.info(f"Removing label {label}")
@@ -99,9 +102,6 @@ def main() -> None:
     action: str | None = os.getenv("ACTION")
     if not action:
         sys.exit("`ACTION` is not set in workflow")
-
-    for name, value in os.environ.items():
-        print("{0}: {1}".format(name, value))
 
     LOGGER.info(
         f"pr number: {pr_number}, event_action: {event_action}, event_name: {event_name}, action: {action}"
