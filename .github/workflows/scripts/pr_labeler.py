@@ -56,7 +56,7 @@ def set_pr_size(pr: PullRequest) -> None:
 
 
 def add_remove_pr_label(pr: PullRequest, comment_body: str) -> None:
-    supported_labels: set[str] = {"/wip", "/lgtm", "/verified"}
+    supported_labels: set[str] = {"/wip", "/lgtm", "/verified", "/hold"}
 
     # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
     user_labels: list[tuple[str, str]] = re.findall(

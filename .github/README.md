@@ -2,7 +2,7 @@
 
 ## Supported workflows  
 - Add PR size label
-- Add to or removed from label from PR; supported labels: `wip`, `lgtm`, `verified`  
+- Add to or removed from label from PR; supported labels: `wip`, `lgtm`, `verified`and `hold`
 
 ## How to add a new workflow
 1. Create a new file in `.github/workflows` directory.
