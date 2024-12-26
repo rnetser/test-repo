@@ -62,17 +62,20 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
     hold_str: str = "hold"
     label_prefix: str = "/"
 
+    LOGGER.info(f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name}")
+
+    pr_labels = pr.labels
+    LOGGER.info(f"PR labels: {pr_labels}")
+
     # Remove labels on new commit
     if event_name and event_name != "synchronize":
-        pr_labels = pr.labels
-        LOGGER.info(f"PR labels: {pr_labels}")
         for label in pr_labels:
             if label.name.lower() in (wip_str, lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label.name}")
                 pr.remove_from_labels(label.name)
         return
 
-    if comment_body:
+    elif comment_body:
         supported_labels: set[str] = {
             f"{label_prefix}{wip_str}",
             f"{label_prefix}{lgtm_str}",
@@ -103,6 +106,10 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
 
 
 def main() -> None:
+    action: str | None = os.getenv("ACTION")
+    if not action:
+        sys.exit("`ACTION` is not set in workflow")
+
     github_token: str | None = os.getenv("GITHUB_TOKEN")
     if not github_token:
         sys.exit("`GITHUB_TOKEN` is not set")
@@ -120,10 +127,6 @@ def main() -> None:
     event_name: str | None = os.getenv("GITHUB_EVENT_NAME")
     if not event_name:
         sys.exit("`GITHUB_EVENT_NAME` is not set")
-
-    action: str | None = os.getenv("ACTION")
-    if not action:
-        sys.exit("`ACTION` is not set in workflow")
 
     LOGGER.info(
         f"pr number: {pr_number}, event_action: {event_action}, event_name: {event_name}, action: {action}"
