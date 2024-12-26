@@ -69,6 +69,7 @@ def add_remove_pr_label(pr: PullRequest, event_name: str, comment_body: str | No
 
     # Remove labels on new commit
     if event_name == "synchronize":
+        LOGGER.info("Synchronize event")
         for label in pr_labels:
             if label.lower() in (wip_str, lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label}")
@@ -76,6 +77,7 @@ def add_remove_pr_label(pr: PullRequest, event_name: str, comment_body: str | No
         return
 
     elif event_name == "issue_comment" and comment_body:
+        LOGGER.info("Issue comment event")
         supported_labels: set[str] = {
             f"{label_prefix}{wip_str}",
             f"{label_prefix}{lgtm_str}",
@@ -104,6 +106,8 @@ def add_remove_pr_label(pr: PullRequest, event_name: str, comment_body: str | No
             elif not label_in_pr:
                 LOGGER.info(f"Adding label {label}")
                 pr.add_to_labels(label)
+
+    LOGGER.info("passss")
 
 
 def main() -> None:
