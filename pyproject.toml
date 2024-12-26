@@ -54,5 +54,6 @@ dependencies = [
     "protobuf",
     "grpcio-reflection",
     "pygithub>=2.5.0",
+    "pytest-mock>=3.14.0",
 ]
 

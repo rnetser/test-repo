@@ -105,9 +105,10 @@ def add_remove_pr_label(
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
             label_in_pr = any([label == _label.lower() for _label in pr_labels])
-            if (action == "cancel" or event_action == "deleted") and label_in_pr:
-                LOGGER.info(f"Removing label {label}")
-                pr.remove_from_labels(label)
+            if action == "cancel" or event_action == "deleted":
+                if label_in_pr:
+                    LOGGER.info(f"Removing label {label}")
+                    pr.remove_from_labels(label)
             elif not label_in_pr:
                 LOGGER.info(f"Adding label {label}")
                 pr.add_to_labels(label)
