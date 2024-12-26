@@ -55,27 +55,33 @@ def set_pr_size(pr: PullRequest) -> None:
     pr.add_to_labels(size_label)
 
 
-def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_name: str | None = None) -> None:
+def add_remove_pr_label(
+    pr: PullRequest, event_name: str, event_action: str, comment_body: str | None = None
+) -> None:
     wip_str: str = "wip"
     lgtm_str: str = "lgtm"
     verified_str: str = "verified"
     hold_str: str = "hold"
     label_prefix: str = "/"
 
-    LOGGER.info(f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name}")
+    LOGGER.info(
+        f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name} event_action: {event_action}"
+    )
 
     pr_labels = [pr.name for pr in pr.labels]
     LOGGER.info(f"PR labels: {pr_labels}")
 
     # Remove labels on new commit
-    if event_name and event_name != "synchronize":
+    if event_action == "synchronize":
+        LOGGER.info("Synchronize event")
         for label in pr_labels:
             if label.lower() in (wip_str, lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
 
-    elif comment_body:
+    elif event_name == "issue_comment" and comment_body:
+        LOGGER.info("Issue comment event")
         supported_labels: set[str] = {
             f"{label_prefix}{wip_str}",
             f"{label_prefix}{lgtm_str}",
@@ -104,6 +110,8 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
             elif not label_in_pr:
                 LOGGER.info(f"Adding label {label}")
                 pr.add_to_labels(label)
+
+    LOGGER.info("passss")
 
 
 def main() -> None:
@@ -149,7 +157,12 @@ def main() -> None:
         set_pr_size(pr=pr)
 
     if action == labels_action_name:
-        add_remove_pr_label(pr=pr, comment_body=comment_body, event_name=event_name)
+        add_remove_pr_label(
+            pr=pr,
+            event_name=event_name,
+            event_action=event_action,
+            comment_body=comment_body,
+        )
 
 
 if __name__ == "__main__":
