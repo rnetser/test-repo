@@ -75,7 +75,7 @@ def add_remove_pr_label(
     if event_action == "synchronize":
         LOGGER.info("Synchronize event")
         for label in pr_labels:
-            if label.lower() in (wip_str, lgtm_str, verified_str):
+            if label.lower() in (lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
