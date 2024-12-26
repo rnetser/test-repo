@@ -75,7 +75,7 @@ def add_remove_pr_label(
     if event_action == "synchronize":
         LOGGER.info("Synchronize event")
         for label in pr_labels:
-            if label.lower() in (wip_str, lgtm_str, verified_str):
+            if label.lower() in (lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
@@ -89,9 +89,10 @@ def add_remove_pr_label(
             f"{label_prefix}{hold_str}",
         }
 
-        # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
+        # Searches for `supported_labels` in PR comment and splits to tuples;
+        # index 0 is label, index 1 (optional) `cancel`
         user_labels: list[tuple[str, str]] = re.findall(
-            rf"({'|'.join(supported_labels)})(\s*cancel)?", comment_body.lower()
+            rf"({'|'.join(supported_labels)})\s*(cancel)?", comment_body.lower()
         )
 
         LOGGER.info(f"User labels: {user_labels}")
@@ -104,14 +105,16 @@ def add_remove_pr_label(
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
             label_in_pr = any([label == _label.lower() for _label in pr_labels])
-            if action == "cancel" and label_in_pr:
+            if (action == "cancel" or event_action == "deleted") and label_in_pr:
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
             elif not label_in_pr:
                 LOGGER.info(f"Adding label {label}")
                 pr.add_to_labels(label)
 
-    LOGGER.info("passss")
+        return
+
+    LOGGER.warning("`add_remove_pr_label` called without a supported event")
 
 
 def main() -> None:
