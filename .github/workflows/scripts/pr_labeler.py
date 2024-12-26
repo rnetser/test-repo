@@ -64,15 +64,15 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
 
     LOGGER.info(f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name}")
 
-    pr_labels = pr.labels
+    pr_labels = [pr.name for pr in pr.labels]
     LOGGER.info(f"PR labels: {pr_labels}")
 
     # Remove labels on new commit
     if event_name and event_name != "synchronize":
         for label in pr_labels:
-            if label.name.lower() in (wip_str, lgtm_str, verified_str):
-                LOGGER.info(f"Removing label {label.name}")
-                pr.remove_from_labels(label.name)
+            if label.lower() in (wip_str, lgtm_str, verified_str):
+                LOGGER.info(f"Removing label {label}")
+                pr.remove_from_labels(label)
         return
 
     elif comment_body:
@@ -97,10 +97,11 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
 
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
-            if action == "cancel":
+            label_in_pr = any([label == _label.lower() for _label in pr_labels])
+            if action == "cancel" and label_in_pr:
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
-            else:
+            elif not label_in_pr:
                 LOGGER.info(f"Adding label {label}")
                 pr.add_to_labels(label)
 
