@@ -55,29 +55,61 @@ def set_pr_size(pr: PullRequest) -> None:
     pr.add_to_labels(size_label)
 
 
-def add_remove_pr_label(pr: PullRequest, comment_body: str) -> None:
-    supported_labels: set[str] = {"/wip", "/lgtm", "/verified", "/hold"}
+def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_name: str | None = None) -> None:
+    wip_str: str = "wip"
+    lgtm_str: str = "lgtm"
+    verified_str: str = "verified"
+    hold_str: str = "hold"
+    label_prefix: str = "/"
 
-    # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
-    user_labels: list[tuple[str, str]] = re.findall(
-        rf"({'|'.join(supported_labels)})(\s*cancel)?", comment_body.lower()
-    )
+    LOGGER.info(f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name}")
 
-    # In case of the same label appears multiple times, the last one is used
-    labels: dict[str, str] = {}
-    for _label in user_labels:
-        labels[_label[0]] = _label[1]
+    pr_labels = pr.labels
+    LOGGER.info(f"PR labels: {pr_labels}")
 
-    for label, action in labels.items():
-        if action == "cancel":
-            LOGGER.info(f"Removing label {label}")
-            pr.remove_from_labels(label)
-        else:
-            LOGGER.info(f"Adding label {label}")
-            pr.add_to_labels(label)
+    # Remove labels on new commit
+    if event_name and event_name != "synchronize":
+        for label in pr_labels:
+            if label.name.lower() in (wip_str, lgtm_str, verified_str):
+                LOGGER.info(f"Removing label {label.name}")
+                pr.remove_from_labels(label.name)
+        return
+
+    elif comment_body:
+        supported_labels: set[str] = {
+            f"{label_prefix}{wip_str}",
+            f"{label_prefix}{lgtm_str}",
+            f"{label_prefix}{verified_str}",
+            f"{label_prefix}{hold_str}",
+        }
+
+        # Searches for `supported_labels` in PR comment and splits to tuples; index 0 is label, index 1 (optional) `cancel`
+        user_labels: list[tuple[str, str]] = re.findall(
+            rf"({'|'.join(supported_labels)})(\s*cancel)?", comment_body.lower()
+        )
+
+        LOGGER.info(f"User labels: {user_labels}")
+
+        # In case of the same label appears multiple times, the last one is used
+        labels: dict[str, str] = {}
+        for _label in user_labels:
+            labels[_label[0].replace(label_prefix, "")] = _label[1]
+
+        LOGGER.info(f"Processing labels: {labels}")
+        for label, action in labels.items():
+            if action == "cancel":
+                LOGGER.info(f"Removing label {label}")
+                pr.remove_from_labels(label)
+            else:
+                LOGGER.info(f"Adding label {label}")
+                pr.add_to_labels(label)
 
 
 def main() -> None:
+    action: str | None = os.getenv("ACTION")
+    if not action:
+        sys.exit("`ACTION` is not set in workflow")
+
     github_token: str | None = os.getenv("GITHUB_TOKEN")
     if not github_token:
         sys.exit("`GITHUB_TOKEN` is not set")
@@ -96,13 +128,6 @@ def main() -> None:
     if not event_name:
         sys.exit("`GITHUB_EVENT_NAME` is not set")
 
-    action: str | None = os.getenv("ACTION")
-    if not action:
-        sys.exit("`ACTION` is not set in workflow")
-
-    for name, value in os.environ.items():
-        print("{0}: {1}".format(name, value))
-
     LOGGER.info(
         f"pr number: {pr_number}, event_action: {event_action}, event_name: {event_name}, action: {action}"
     )
@@ -110,7 +135,7 @@ def main() -> None:
     comment_body: str | None = None
     labels_action_name: str = "add-remove-labels"
 
-    if action == labels_action_name:
+    if action == labels_action_name and event_action == "issue_comment":
         comment_body: str = os.getenv("COMMENT_BODY")
         if not comment_body:
             sys.exit("`COMMENT_BODY` is not set")
@@ -123,7 +148,7 @@ def main() -> None:
         set_pr_size(pr=pr)
 
     if action == labels_action_name:
-        add_remove_pr_label(pr=pr, comment_body=comment_body)
+        add_remove_pr_label(pr=pr, comment_body=comment_body, event_name=event_name)
 
 
 if __name__ == "__main__":
