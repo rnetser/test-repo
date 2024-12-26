@@ -116,7 +116,7 @@ def main() -> None:
 
     repo_name: str = os.environ["GITHUB_REPOSITORY"]
 
-    pr_number: int | None = int(os.getenv("GITHUB_PR_NUMBER"))
+    pr_number: int = int(os.getenv("GITHUB_PR_NUMBER", 0))
     if not pr_number:
         sys.exit("`GITHUB_PR_NUMBER` is not set")
 
