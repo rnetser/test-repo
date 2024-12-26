@@ -119,7 +119,6 @@ def add_remove_pr_label(
 
 
 def main() -> None:
-    # TODO: add tests
     action: str | None = os.getenv("ACTION")
     if not action:
         sys.exit("`ACTION` is not set in workflow")
