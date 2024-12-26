@@ -55,7 +55,7 @@ def set_pr_size(pr: PullRequest) -> None:
     pr.add_to_labels(size_label)
 
 
-def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_name: str | None = None) -> None:
+def add_remove_pr_label(pr: PullRequest, event_name: str, comment_body: str | None = None) -> None:
     wip_str: str = "wip"
     lgtm_str: str = "lgtm"
     verified_str: str = "verified"
@@ -68,14 +68,14 @@ def add_remove_pr_label(pr: PullRequest, comment_body: str | None = None, event_
     LOGGER.info(f"PR labels: {pr_labels}")
 
     # Remove labels on new commit
-    if event_name and event_name != "synchronize":
+    if event_name == "synchronize":
         for label in pr_labels:
             if label.lower() in (wip_str, lgtm_str, verified_str):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
 
-    elif comment_body:
+    elif event_name == "issue_comment" and comment_body:
         supported_labels: set[str] = {
             f"{label_prefix}{wip_str}",
             f"{label_prefix}{lgtm_str}",
@@ -149,7 +149,7 @@ def main() -> None:
         set_pr_size(pr=pr)
 
     if action == labels_action_name:
-        add_remove_pr_label(pr=pr, comment_body=comment_body, event_name=event_name)
+        add_remove_pr_label(pr=pr, event_name=event_name, comment_body=comment_body)
 
 
 if __name__ == "__main__":
