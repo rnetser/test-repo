@@ -122,7 +122,7 @@ def main() -> None:
     action: str | None = os.getenv("ACTION")
 
     if not action or action not in supported_actions:
-        sys.exit("`ACTION` is not set in workflow or is not supported. Supported actions: {supported_actions}")
+        sys.exit(f"`ACTION` is not set in workflow or is not supported. Supported actions: {supported_actions}")
 
     github_token: str | None = os.getenv("GITHUB_TOKEN")
     if not github_token:
