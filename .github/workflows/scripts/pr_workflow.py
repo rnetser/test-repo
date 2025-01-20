@@ -32,14 +32,14 @@ def get_pr_size(pr: PullRequest) -> int:
 
 
 def get_size_label(size: int) -> str:
-    xxl_size = f"{SIZE_LABEL_PREFIX}XXL"
+    xxl_size = f"{SIZE_LABEL_PREFIX}xxl"
 
     size_labels: dict[tuple[int, int], str] = {
-        (0, 20): f"{SIZE_LABEL_PREFIX}XS",
-        (21, 50): f"{SIZE_LABEL_PREFIX}S",
-        (51, 100): f"{SIZE_LABEL_PREFIX}M",
-        (101, 300): f"{SIZE_LABEL_PREFIX}L",
-        (301, 1000): f"{SIZE_LABEL_PREFIX}XL",
+        (0, 20): f"{SIZE_LABEL_PREFIX}xs",
+        (21, 50): f"{SIZE_LABEL_PREFIX}s",
+        (51, 100): f"{SIZE_LABEL_PREFIX}m",
+        (101, 300): f"{SIZE_LABEL_PREFIX}l",
+        (301, 1000): f"{SIZE_LABEL_PREFIX}xl",
         (1001, sys.maxsize): xxl_size,
     }
 
