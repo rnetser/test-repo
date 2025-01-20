@@ -137,7 +137,7 @@ def add_remove_pr_labels(
 
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
-            label_in_pr = any([label == _label.lower() for _label in pr_labels])
+            label_in_pr = any([_label.lower().startswith(label) for _label in pr_labels])
             if action[CANCEL_ACTION] or event_action == "deleted":
                 if label_in_pr:
                     LOGGER.info(f"Removing label {label}")
@@ -221,7 +221,7 @@ def main() -> None:
             event_action=event_action,
             comment_body=comment_body,
             user_login=user_login,
-                repository=repo
+            repository=repo
         )
 
     if action == welcome_comment_action_name:
