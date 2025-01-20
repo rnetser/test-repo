@@ -101,14 +101,15 @@ def add_remove_pr_labels(
     event_action: str,
     comment_body: str = "",
     user_login: str = "",
-    event_state: str = "",
+    review_state: str = "",
 ) -> None:
     if comment_body and WELCOME_COMMENT in comment_body:
         LOGGER.info(f"Welcome message found in PR {pr.title}. Not processing")
         return
 
     LOGGER.info(
-        f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name} event_action: {event_action} event_state {event_state}"
+        f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name}\n"
+        f"event_action: {event_action} review_state {review_state}"
     )
 
     pr_labels = [label.name for label in pr.labels]
@@ -165,21 +166,21 @@ def add_remove_pr_labels(
         return
 
     elif event_action == "pull_request_review":
-        LOGGER.info(f"{event_action} event, state: {event_state}")
+        LOGGER.info(f"{event_action} event, state: {review_state}")
         lgtm_label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
         change_requested_label = f"{CHANGED_REQUESTED_BY_LABEL_PREFIX}{user_login}"
         label_to_remove = None
         label_to_add = None
 
-        if event_state == "approved":
+        if review_state == "approved":
             label_to_remove = change_requested_label
             label_to_add = lgtm_label
 
-        elif event_state == "changes_requested":
+        elif review_state == "changes_requested":
             label_to_add = change_requested_label
             label_to_remove = lgtm_label
 
-        elif event_state == "commented":
+        elif review_state == "commented":
             label_to_add = f"{COMMENTED_BY_LABEL_PREFIX}{user_login}"
 
         if label_to_add and label_to_add not in pr_labels:
@@ -238,7 +239,7 @@ def main() -> None:
 
     comment_body: str = ""
     user_login: str = ""
-    event_state: str = ""
+    review_state: str = ""
 
     if action == labels_action_name and event_name == "issue_comment":
         comment_body = os.getenv("COMMENT_BODY") or comment_body
@@ -249,9 +250,9 @@ def main() -> None:
         if not user_login:
             sys.exit("`GITHUB_USER_LOGIN` is not set")
 
-        event_state = os.getenv("GITHUB_EVENT_STATE")
-        if not event_state:
-            sys.exit("`GITHUB_EVENT_STATE` is not set")
+        review_state = os.getenv("GITHUB_EVENT_REVIEW_STATE")
+        if not review_state:
+            sys.exit("`GITHUB_EVENT_REVIEW_STATE` is not set")
 
     gh_client: Github = Github(github_token)
     repo: Repository = gh_client.get_repo(repo_name)
@@ -268,7 +269,7 @@ def main() -> None:
             comment_body=comment_body,
             user_login=user_login,
             repository=repo,
-            event_state=event_state,
+            review_state=review_state,
         )
 
     if action == welcome_comment_action_name:
