@@ -66,6 +66,9 @@ def set_label_in_repository(repository: Repository, label: str) -> None:
                 LOGGER.info(f"Edit repository label: {label}, color: {label_color}")
                 _repo_label.edit(name=_repo_label.name, color=label_color)
 
+        else:
+            LOGGER.info(f"Add repository labelxxxxx: {label}")
+
     except UnknownObjectException:
         LOGGER.info(f"Add repository label: {label}, color: {label_color}")
         repository.create_label(name=label, color=label_color)
