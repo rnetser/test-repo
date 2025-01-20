@@ -139,14 +139,18 @@ def add_remove_pr_labels(
 
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
-            label_in_pr = any([_label.lower().startswith(label) for _label in pr_labels])
+            if label == LGTM_LABEL_STR:
+                label += f"-{user_login}"
+
+            label_in_pr = any([label == _label.lower() for _label in pr_labels])
+            LOGGER.info(f"Processing label: {label}, action: {action}")
+
             if action[CANCEL_ACTION] or event_action == "deleted":
                 if label_in_pr:
                     LOGGER.info(f"Removing label {label}")
                     pr.remove_from_labels(label)
+
             elif not label_in_pr:
-                if label == LGTM_LABEL_STR:
-                    label += f"-{user_login}"
                 LOGGER.info(f"Adding label {label}")
                 set_label_in_repository(repository=repository, label=label)
                 pr.add_to_labels(label)
