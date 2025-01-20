@@ -49,7 +49,7 @@ def get_size_label(size: int) -> str:
     return xxl_size
 
 
-def set_label_to_repository(repository: Repository, label: str) -> None:
+def set_label_in_repository(repository: Repository, label: str) -> None:
     label_color = [
         label_color
         for label_prefix, label_color in ALL_LABELS_DICT.items()
@@ -60,12 +60,13 @@ def set_label_to_repository(repository: Repository, label: str) -> None:
     repo_labels = {_label.name: _label.color for _label in repository.get_labels()}
     LOGGER.info(f"repo labels: {repo_labels}")
 
-    if _repo_label := repository.get_label(name=label):
-        if _repo_label.color != label_color:
-            LOGGER.info(f"Edit repository label: {label}, color: {label_color}")
-            _repo_label.edit(name=_repo_label.name, color=label_color)
+    try:
+        if _repo_label := repository.get_label(name=label):
+            if _repo_label.color != label_color:
+                LOGGER.info(f"Edit repository label: {label}, color: {label_color}")
+                _repo_label.edit(name=_repo_label.name, color=label_color)
 
-    else:
+    except UnknownObjectException:
         LOGGER.info(f"Add repository label: {label}, color: {label_color}")
         repository.create_label(name=label, color=label_color)
 
@@ -83,7 +84,7 @@ def set_pr_size(pr: PullRequest, repository: Repository) -> None:
             LOGGER.info(f"Removing label {label.name}")
             pr.remove_from_labels(label.name)
 
-    set_label_to_repository(repository=repository, label=size_label)
+    set_label_in_repository(repository=repository, label=size_label)
 
     LOGGER.info(f"New label: {size_label}")
     pr.add_to_labels(size_label)
@@ -146,7 +147,7 @@ def add_remove_pr_labels(
                 if label == LGTM_LABEL_STR:
                     label += f"-{user_login}"
                 LOGGER.info(f"Adding label {label}")
-                set_label_to_repository(repository=repository, label=label)
+                set_label_in_repository(repository=repository, label=label)
                 pr.add_to_labels(label)
 
         return
