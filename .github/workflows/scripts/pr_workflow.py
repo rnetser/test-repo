@@ -241,7 +241,7 @@ def main() -> None:
     user_login: str = ""
     review_state: str = ""
 
-    if action == labels_action_name and event_name == "issue_comment":
+    if action == labels_action_name and event_name in ("issue_comment", "pull_request_review"):
         comment_body = os.getenv("COMMENT_BODY") or comment_body
         if not comment_body:
             sys.exit("`COMMENT_BODY` is not set")
