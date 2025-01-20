@@ -24,4 +24,4 @@ jobs:
           GITHUB_EVENT_ACTION: ${{github.event.action}}
           GITHUB_EVENT_NAME: ${{github.event_name}}
           ACTION: "add-pr-size-label"
-        run: uv run python .github/workflows/scripts/pr_labeler.py
+        run: uv run python .github/workflows/scripts/pr_workflow.py
