@@ -3,48 +3,22 @@ from __future__ import annotations
 import os
 import re
 import sys
-from github import Github
+from github import Github, UnknownObjectException
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 from simple_logger.logger import get_logger
+from constants import (
+    ALL_LABELS_DICT,
+    CANCEL_ACTION,
+    DEFAULT_LABEL_COLOR, LABEL_PREFIX,
+    LGTM_LABEL_STR,
+    SIZE_LABEL_PREFIX,
+    SUPPORTED_LABELS,
+    VERIFIED_LABEL_STR,
+    WELCOME_COMMENT,
+)
 
 LOGGER = get_logger(name="pr_labeler")
-
-
-WIP_STR: str = "wip"
-LGTM_STR: str = "lgtm"
-VERIFIED_STR: str = "verified"
-HOLD_STR: str = "hold"
-LABEL_PREFIX: str = "/"
-
-SUPPORTED_LABELS: set[str] = {
-    f"{LABEL_PREFIX}{WIP_STR}",
-    f"{LABEL_PREFIX}{LGTM_STR}",
-    f"{LABEL_PREFIX}{VERIFIED_STR}",
-    f"{LABEL_PREFIX}{HOLD_STR}",
-}
-
-CANCEL_ACTION: str = "cancel"
-WELCOME_COMMENT: str = f"""
-The following are automatically added/executed:
- * PR size label.
- * Run [pre-commit](https://pre-commit.ci/)
- * Run [tox](https://tox.wiki/)
-
-Available user actions:
- * To mark a PR as `WIP`, add `/wip` in a comment. To remove it from the PR comment `/wip cancel` to the PR.
- * To block merging of a PR, add `/hold` in a comment. To un-block merging of PR comment `/hold cancel`.
- * To mark a PR as approved, add `/lgtm` in a comment. To remove, add `/lgtm cancel`.
-        `lgtm` label removed on each new commit push.
- * To mark PR as verified comment `/verified` to the PR, to un-verify comment `/verified cancel` to the PR.
-        `verified` label removed on each new commit push.
-
-<details>
-<summary>Supported labels</summary>
-
-{SUPPORTED_LABELS}
-</details>
-    """
 
 
 def get_pr_size(pr: PullRequest) -> int:
@@ -58,22 +32,49 @@ def get_pr_size(pr: PullRequest) -> int:
 
 
 def get_size_label(size: int) -> str:
+    xxl_size = f"{SIZE_LABEL_PREFIX}xxl"
+
     size_labels: dict[tuple[int, int], str] = {
-        (0, 20): "size/xs",
-        (21, 50): "size/s",
-        (51, 100): "size/m",
-        (101, 300): "size/l",
-        (301, 1000): "size/xl",
-        (1001, sys.maxsize): "size/xxl",
+        (0, 20): f"{SIZE_LABEL_PREFIX}xs",
+        (21, 50): f"{SIZE_LABEL_PREFIX}s",
+        (51, 100): f"{SIZE_LABEL_PREFIX}m",
+        (101, 300): f"{SIZE_LABEL_PREFIX}l",
+        (301, 1000): f"{SIZE_LABEL_PREFIX}xl",
+        (1001, sys.maxsize): xxl_size,
     }
 
     for (min_size, max_size), label in size_labels.items():
         if min_size <= size <= max_size:
             return label
-    return "size/xxl"
+    return xxl_size
 
 
-def set_pr_size(pr: PullRequest) -> None:
+def set_label_in_repository(repository: Repository, label: str) -> None:
+    label_color = [
+        label_color
+        for label_prefix, label_color in ALL_LABELS_DICT.items()
+        if label.startswith(label_prefix)
+    ]
+    label_color = label_color[0] if label_color else DEFAULT_LABEL_COLOR
+
+    repo_labels = {_label.name: _label.color for _label in repository.get_labels()}
+    LOGGER.info(f"repo labels: {repo_labels}")
+
+    try:
+        if _repo_label := repository.get_label(name=label):
+            if _repo_label.color != label_color:
+                LOGGER.info(f"Edit repository label: {label}, color: {label_color}")
+                _repo_label.edit(name=_repo_label.name, color=label_color)
+
+        else:
+            LOGGER.info(f"Add repository labelxxxxx: {label}")
+
+    except UnknownObjectException:
+        LOGGER.info(f"Add repository label: {label}, color: {label_color}")
+        repository.create_label(name=label, color=label_color)
+
+
+def set_pr_size(pr: PullRequest, repository: Repository) -> None:
     size: int = get_pr_size(pr=pr)
     size_label: str = get_size_label(size=size)
 
@@ -82,9 +83,11 @@ def set_pr_size(pr: PullRequest) -> None:
             LOGGER.info(f"Label {label.name} already set")
             return
 
-        if label.name.lower().startswith("size/"):
+        if label.name.lower().startswith(SIZE_LABEL_PREFIX):
             LOGGER.info(f"Removing label {label.name}")
             pr.remove_from_labels(label.name)
+
+    set_label_in_repository(repository=repository, label=size_label)
 
     LOGGER.info(f"New label: {size_label}")
     pr.add_to_labels(size_label)
@@ -92,6 +95,7 @@ def set_pr_size(pr: PullRequest) -> None:
 
 def add_remove_pr_labels(
     pr: PullRequest,
+    repository: Repository,
     event_name: str,
     event_action: str,
     comment_body: str = "",
@@ -112,7 +116,7 @@ def add_remove_pr_labels(
     if event_action == "synchronize":
         LOGGER.info("Synchronize event")
         for label in pr_labels:
-            if label.lower() in (LGTM_STR, VERIFIED_STR):
+            if label.lower() in (LGTM_LABEL_STR, VERIFIED_LABEL_STR):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
@@ -137,15 +141,16 @@ def add_remove_pr_labels(
 
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
-            label_in_pr = any([label == _label.lower() for _label in pr_labels])
+            label_in_pr = any([_label.lower().startswith(label) for _label in pr_labels])
             if action[CANCEL_ACTION] or event_action == "deleted":
                 if label_in_pr:
                     LOGGER.info(f"Removing label {label}")
                     pr.remove_from_labels(label)
             elif not label_in_pr:
-                if label == LGTM_STR:
+                if label == LGTM_LABEL_STR:
                     label += f"-{user_login}"
                 LOGGER.info(f"Adding label {label}")
+                set_label_in_repository(repository=repository, label=label)
                 pr.add_to_labels(label)
 
         return
@@ -211,7 +216,7 @@ def main() -> None:
     pr: PullRequest = repo.get_pull(pr_number)
 
     if action == pr_size_action_name:
-        set_pr_size(pr=pr)
+        set_pr_size(pr=pr, repository=repo)
 
     if action == labels_action_name:
         add_remove_pr_labels(
@@ -220,6 +225,7 @@ def main() -> None:
             event_action=event_action,
             comment_body=comment_body,
             user_login=user_login,
+            repository=repo
         )
 
     if action == welcome_comment_action_name:
