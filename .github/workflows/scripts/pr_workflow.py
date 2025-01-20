@@ -108,7 +108,7 @@ def add_remove_pr_labels(
         return
 
     LOGGER.info(
-        f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name}\n"
+        f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name} "
         f"event_action: {event_action} review_state {review_state}"
     )
 
@@ -165,8 +165,8 @@ def add_remove_pr_labels(
 
         return
 
-    elif event_action == "pull_request_review":
-        LOGGER.info(f"{event_action} event, state: {review_state}")
+    elif event_name == "pull_request_review":
+        LOGGER.info(f"{event_name} event, state: {review_state}")
         lgtm_label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
         change_requested_label = f"{CHANGED_REQUESTED_BY_LABEL_PREFIX}{user_login}"
         label_to_remove = None
