@@ -49,7 +49,7 @@ def get_size_label(size: int) -> str:
     return xxl_size
 
 
-def add_label_to_repository(repository: Repository, label: str) -> None:
+def set_label_to_repository(repository: Repository, label: str) -> None:
     label_color = [
         label_color
         for label_prefix, label_color in ALL_LABELS_DICT.items()
@@ -57,8 +57,11 @@ def add_label_to_repository(repository: Repository, label: str) -> None:
     ]
     label_color = label_color[0] if label_color else DEFAULT_LABEL_COLOR
 
+    LOGGER.info(f"Setting label {label} color to {label_color}")
+    LOGGER.info(f"repo labels: {repository.get_labels()}")
+
     try:
-        _repo_label = repository.get_label(label)
+        _repo_label = repository.get_label(name=label)
         if _repo_label.color != label_color:
             LOGGER.info(f"Edit repository label: {label}, color: {label_color}")
             _repo_label.edit(name=_repo_label.name, color=label_color)
@@ -77,12 +80,13 @@ def set_pr_size(pr: PullRequest, repository: Repository) -> None:
             LOGGER.info(f"Label {label.name} already set")
             return
 
-        if label.name.lower().startswith("size/"):
+        if label.name.lower().startswith(SIZE_LABEL_PREFIX):
             LOGGER.info(f"Removing label {label.name}")
             pr.remove_from_labels(label.name)
 
+    set_label_to_repository(repository=repository, label=size_label)
+
     LOGGER.info(f"New label: {size_label}")
-    add_label_to_repository(repository=repository, label=size_label)
     pr.add_to_labels(size_label)
 
 
@@ -143,7 +147,7 @@ def add_remove_pr_labels(
                 if label == LGTM_LABEL_STR:
                     label += f"-{user_login}"
                 LOGGER.info(f"Adding label {label}")
-                add_label_to_repository(repository=repository, label=label)
+                set_label_to_repository(repository=repository, label=label)
                 pr.add_to_labels(label)
 
         return
