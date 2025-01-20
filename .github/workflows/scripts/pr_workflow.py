@@ -10,8 +10,12 @@ from simple_logger.logger import get_logger
 from constants import (
     ALL_LABELS_DICT,
     CANCEL_ACTION,
-    CHANGED_REQUESTED_BY_LABEL_PREFIX, COMMENTED_BY_LABEL_PREFIX, DEFAULT_LABEL_COLOR, LABEL_PREFIX,
-    LGTM_BY_LABEL_PREFIX, LGTM_LABEL_STR,
+    CHANGED_REQUESTED_BY_LABEL_PREFIX,
+    COMMENTED_BY_LABEL_PREFIX,
+    DEFAULT_LABEL_COLOR,
+    LABEL_PREFIX,
+    LGTM_BY_LABEL_PREFIX,
+    LGTM_LABEL_STR,
     SIZE_LABEL_PREFIX,
     SUPPORTED_LABELS,
     VERIFIED_LABEL_STR,
@@ -97,14 +101,14 @@ def add_remove_pr_labels(
     event_action: str,
     comment_body: str = "",
     user_login: str = "",
-    event_state: str = ""
+    event_state: str = "",
 ) -> None:
     if comment_body and WELCOME_COMMENT in comment_body:
         LOGGER.info(f"Welcome message found in PR {pr.title}. Not processing")
         return
 
     LOGGER.info(
-        f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name} event_action: {event_action}"
+        f"add_remove_pr_label comment_body: {comment_body} event_name:{event_name} event_action: {event_action} event_state {event_state}"
     )
 
     pr_labels = [label.name for label in pr.labels]
@@ -115,7 +119,9 @@ def add_remove_pr_labels(
         LOGGER.info("Synchronize event")
         for label in pr_labels:
             LOGGER.warning(f"label: {label}")
-            if label.lower() == VERIFIED_LABEL_STR or label.lower().startswith(LGTM_LABEL_STR):
+            if label.lower() == VERIFIED_LABEL_STR or label.lower().startswith(
+                LGTM_LABEL_STR
+            ):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
@@ -262,7 +268,7 @@ def main() -> None:
             comment_body=comment_body,
             user_login=user_login,
             repository=repo,
-            event_state=event_state
+            event_state=event_state,
         )
 
     if action == welcome_comment_action_name:
