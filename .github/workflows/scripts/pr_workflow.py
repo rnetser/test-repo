@@ -66,9 +66,6 @@ def set_label_in_repository(repository: Repository, label: str) -> None:
                 LOGGER.info(f"Edit repository label: {label}, color: {label_color}")
                 _repo_label.edit(name=_repo_label.name, color=label_color)
 
-        else:
-            LOGGER.info(f"Add repository labelxxxxx: {label}")
-
     except UnknownObjectException:
         LOGGER.info(f"Add repository label: {label}, color: {label_color}")
         repository.create_label(name=label, color=label_color)
@@ -116,7 +113,8 @@ def add_remove_pr_labels(
     if event_action == "synchronize":
         LOGGER.info("Synchronize event")
         for label in pr_labels:
-            if label.lower() in (LGTM_LABEL_STR, VERIFIED_LABEL_STR):
+            LOGGER.warning(f"label: {label}")
+            if label.lower() == VERIFIED_LABEL_STR or label.lower().startswith(LGTM_LABEL_STR):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
