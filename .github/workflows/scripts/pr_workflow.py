@@ -58,7 +58,8 @@ def set_label_to_repository(repository: Repository, label: str) -> None:
     label_color = label_color[0] if label_color else DEFAULT_LABEL_COLOR
 
     LOGGER.info(f"Setting label {label} color to {label_color}")
-    LOGGER.info(f"repo labels: {repository.get_labels()}")
+    repo_labels = {_label.name: _label.color for _label in repository.get_labels()}
+    LOGGER.info(f"repo labels: {repo_labels}")
 
     try:
         _repo_label = repository.get_label(name=label)
