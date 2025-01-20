@@ -57,17 +57,15 @@ def set_label_to_repository(repository: Repository, label: str) -> None:
     ]
     label_color = label_color[0] if label_color else DEFAULT_LABEL_COLOR
 
-    LOGGER.info(f"Setting label {label} color to {label_color}")
     repo_labels = {_label.name: _label.color for _label in repository.get_labels()}
     LOGGER.info(f"repo labels: {repo_labels}")
 
-    try:
-        _repo_label = repository.get_label(name=label)
+    if _repo_label := repository.get_label(name=label):
         if _repo_label.color != label_color:
             LOGGER.info(f"Edit repository label: {label}, color: {label_color}")
             _repo_label.edit(name=_repo_label.name, color=label_color)
 
-    except UnknownObjectException:
+    else:
         LOGGER.info(f"Add repository label: {label}, color: {label_color}")
         repository.create_label(name=label, color=label_color)
 
