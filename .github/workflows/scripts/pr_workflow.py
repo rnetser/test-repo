@@ -143,6 +143,8 @@ def add_remove_pr_labels(
                 label += f"-{user_login}"
 
             label_in_pr = any([label == _label.lower() for _label in pr_labels])
+            LOGGER.info(f"Processing label: {label}, action: {action}")
+
             if action[CANCEL_ACTION] or event_action == "deleted":
                 if label_in_pr:
                     LOGGER.info(f"Removing label {label}")
