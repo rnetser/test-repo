@@ -192,7 +192,8 @@ def add_remove_pr_labels(
             LOGGER.info(f"Removing review label {label_to_add}")
             pr.remove_from_labels(label_to_remove)
 
-    LOGGER.warning("`add_remove_pr_label` called without a supported event")
+    else:
+        LOGGER.warning("`add_remove_pr_label` called without a supported event")
 
 
 def add_welcome_comment(pr: PullRequest) -> None:
