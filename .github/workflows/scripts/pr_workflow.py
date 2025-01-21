@@ -119,9 +119,9 @@ def add_remove_pr_labels(
     if event_action == "synchronize":
         LOGGER.info("Synchronize event")
         for label in pr_labels:
-            LOGGER.warning(f"label: {label}")
+            LOGGER.info(f"Processing label: {label}")
             if label.lower() == VERIFIED_LABEL_STR or label.lower().startswith(
-                LGTM_LABEL_STR
+                LGTM_BY_LABEL_PREFIX
             ) or label.lower().startswith(CHANGED_REQUESTED_BY_LABEL_PREFIX):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
@@ -148,7 +148,7 @@ def add_remove_pr_labels(
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
             if label == LGTM_LABEL_STR:
-                label += f"-{user_login}"
+                label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
 
             label_in_pr = any([label == _label.lower() for _label in pr_labels])
             LOGGER.info(f"Processing label: {label}, action: {action}")
