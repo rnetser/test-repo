@@ -247,12 +247,12 @@ def add_welcome_comment(pr: PullRequest) -> None:
 
 
 def main() -> None:
-    labels_action_name: str = "add-remove-labels"
+    add_remove_labels_action_name: str = "add-remove-labels"
     pr_size_action_name: str = "add-pr-size-label"
     welcome_comment_action_name: str = "add-welcome-comment"
     supported_actions: set[str] = {
         pr_size_action_name,
-        labels_action_name,
+        add_remove_labels_action_name,
         welcome_comment_action_name,
     }
     action: str | None = os.getenv("ACTION")
@@ -288,7 +288,7 @@ def main() -> None:
     user_login: str = ""
     review_state: str = ""
 
-    if action == labels_action_name and event_name in (
+    if action == add_remove_labels_action_name and event_name in (
         "issue_comment",
         "pull_request_review",
     ):
@@ -313,7 +313,7 @@ def main() -> None:
     if action == pr_size_action_name:
         set_pr_size(pr=pr, repository=repo)
 
-    if action == labels_action_name:
+    if action == add_remove_labels_action_name:
         add_remove_pr_labels(
             pr=pr,
             event_name=event_name,
