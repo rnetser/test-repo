@@ -3,22 +3,14 @@ from __future__ import annotations
 import os
 import re
 import sys
+
+from constants import (
+    ALL_LABELS_DICT, CANCEL_ACTION, CHANGED_REQUESTED_BY_LABEL_PREFIX,
+    COMMENTED_BY_LABEL_PREFIX, DEFAULT_LABEL_COLOR, LABEL_PREFIX,
+    LGTM_BY_LABEL_PREFIX, LGTM_LABEL_STR, SIZE_LABEL_PREFIX, SUPPORTED_LABELS,
+    VERIFIED_LABEL_STR, WELCOME_COMMENT)
 from github import Github, UnknownObjectException
 from simple_logger.logger import get_logger
-from constants import (
-    ALL_LABELS_DICT,
-    CANCEL_ACTION,
-    CHANGED_REQUESTED_BY_LABEL_PREFIX,
-    COMMENTED_BY_LABEL_PREFIX,
-    DEFAULT_LABEL_COLOR,
-    LABEL_PREFIX,
-    LGTM_BY_LABEL_PREFIX,
-    LGTM_LABEL_STR,
-    SIZE_LABEL_PREFIX,
-    SUPPORTED_LABELS,
-    VERIFIED_LABEL_STR,
-    WELCOME_COMMENT,
-)
 
 LOGGER = get_logger(name="pr_labeler")
 
@@ -91,15 +83,19 @@ class PrLabeler(PrBaseClass):
         self.verify_labeler_config()
 
     def verify_labeler_config(self):
-        if self.action == self.SupportedActions.add_remove_labels_action_name and self.event_name in (
+        if (
+            self.action == self.SupportedActions.add_remove_labels_action_name
+            and self.event_name
+            in (
                 "issue_comment",
                 "pull_request_review",
+            )
         ):
             if not self.user_login:
                 sys.exit("`GITHUB_USER_LOGIN` is not set")
 
             if self.event_name == "issue_comment" and not self.comment_body:
-                    sys.exit("`COMMENT_BODY` is not set")
+                sys.exit("`COMMENT_BODY` is not set")
 
             if self.event_name == "pull_request_review" and not self.review_state:
                 sys.exit("`GITHUB_EVENT_REVIEW_STATE` is not set")
@@ -114,7 +110,6 @@ class PrLabeler(PrBaseClass):
         if self.action == self.SupportedActions.welcome_comment_action_name:
             self.add_welcome_comment()
 
-
     def get_pr_size(self) -> int:
         additions: int = 0
 
@@ -123,7 +118,6 @@ class PrLabeler(PrBaseClass):
 
         LOGGER.info(f"PR size: {additions}")
         return additions
-
 
     @staticmethod
     def get_size_label(size: int) -> str:
@@ -143,13 +137,11 @@ class PrLabeler(PrBaseClass):
                 return label
         return xxl_size
 
-
     def add_pr_label(self, label: str) -> None:
         self.set_label_in_repository(label=label)
 
         LOGGER.info(f"New label: {label}")
         self.pr.add_to_labels(label)
-
 
     def set_label_in_repository(self, label: str) -> None:
         label_color = [
@@ -172,7 +164,6 @@ class PrLabeler(PrBaseClass):
             LOGGER.info(f"Add repository label: {label}, color: {label_color}")
             self.repo.create_label(name=label, color=label_color)
 
-
     def set_pr_size(self) -> None:
         size: int = self.get_pr_size()
         size_label: str = self.get_size_label(size=size)
@@ -194,7 +185,6 @@ class PrLabeler(PrBaseClass):
         LOGGER.info(f"PR labels: {pr_labels}")
 
         return pr_labels
-
 
     def add_remove_pr_labels(self) -> None:
         if self.comment_body and WELCOME_COMMENT in self.comment_body:
@@ -232,8 +222,8 @@ class PrLabeler(PrBaseClass):
 
         LOGGER.warning("`add_remove_pr_label` called without a supported event")
 
-
-    def pull_request_review_label_actions(self,
+    def pull_request_review_label_actions(
+        self,
     ) -> None:
         LOGGER.info(f"{self.event_name} event, state: {self.review_state}")
 
@@ -261,8 +251,8 @@ class PrLabeler(PrBaseClass):
             LOGGER.info(f"Removing review label {label_to_add}")
             self.pr.remove_from_labels(label_to_remove)
 
-
-    def issue_comment_label_actions(self,
+    def issue_comment_label_actions(
+        self,
     ) -> None:
         LOGGER.info(f"{self.event_name} event")
         # Searches for `supported_labels` in PR comment and splits to tuples;
@@ -284,7 +274,9 @@ class PrLabeler(PrBaseClass):
                 if label == LGTM_LABEL_STR:
                     label = f"{LGTM_BY_LABEL_PREFIX}{self.user_login}"
 
-                label_in_pr = any([label == _label.lower() for _label in self.pr_labels])
+                label_in_pr = any(
+                    [label == _label.lower() for _label in self.pr_labels]
+                )
                 LOGGER.info(f"Processing label: {label}, action: {action}")
 
                 if action[CANCEL_ACTION] or self.event_action == "deleted":
@@ -299,7 +291,6 @@ class PrLabeler(PrBaseClass):
             commented_by_label = f"{COMMENTED_BY_LABEL_PREFIX}{self.user_login}"
             if commented_by_label not in self.pr_labels:
                 self.add_pr_label(label=commented_by_label)
-
 
     def add_welcome_comment(self) -> None:
         self.pr.create_issue_comment(body=WELCOME_COMMENT)
