@@ -10,8 +10,9 @@ APPROVED_BY_LABEL_PREFIX: str = "approved-by-"
 LGTM_BY_LABEL_PREFIX: str = f"{LGTM_LABEL_STR}-by-"
 CHANGED_REQUESTED_BY_LABEL_PREFIX: str = "changes-requested-by-"
 COMMENTED_BY_LABEL_PREFIX: str = "commented-by-"
-
-
+SUCCESS_STR: str = "success"
+FAILURE_STR: str = "failure"
+QUEUED_STR: str = "queued"
 
 SUPPORTED_LABELS: set[str] = {
     f"{LABEL_PREFIX}{WIP_LABEL_STR}",

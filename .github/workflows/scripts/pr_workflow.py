@@ -3,11 +3,12 @@ from __future__ import annotations
 import os
 import re
 import sys
+from typing import Any
 
 from constants import (
     ALL_LABELS_DICT, CANCEL_ACTION, CHANGED_REQUESTED_BY_LABEL_PREFIX,
-    COMMENTED_BY_LABEL_PREFIX, DEFAULT_LABEL_COLOR, LABEL_PREFIX,
-    LGTM_BY_LABEL_PREFIX, LGTM_LABEL_STR, SIZE_LABEL_PREFIX, SUPPORTED_LABELS,
+    COMMENTED_BY_LABEL_PREFIX, DEFAULT_LABEL_COLOR, FAILURE_STR, LABEL_PREFIX,
+    LGTM_BY_LABEL_PREFIX, LGTM_LABEL_STR, QUEUED_STR, SIZE_LABEL_PREFIX, SUCCESS_STR, SUPPORTED_LABELS,
     VERIFIED_LABEL_STR, WELCOME_COMMENT)
 from github import Github, UnknownObjectException
 from simple_logger.logger import get_logger
@@ -208,6 +209,10 @@ class PrLabeler(PrBaseClass):
                 ):
                     LOGGER.info(f"Removing label {label}")
                     self.pr.remove_from_labels(label)
+
+                if label.lower() == VERIFIED_LABEL_STR:
+                    self.set_check_queued(check_run_name=VERIFIED_LABEL_STR)
+
             return
 
         elif self.event_name == "issue_comment":
@@ -284,8 +289,13 @@ class PrLabeler(PrBaseClass):
                         LOGGER.info(f"Removing label {label}")
                         self.pr.remove_from_labels(label)
 
+                        if label.lower() == VERIFIED_LABEL_STR:
+                            self.set_check_queued(check_run_name=VERIFIED_LABEL_STR)
+
                 elif not label_in_pr:
                     self.add_pr_label(label=label)
+                    if label.lower() == VERIFIED_LABEL_STR:
+                        self.set_check_success(check_run_name=VERIFIED_LABEL_STR)
 
         else:
             commented_by_label = f"{COMMENTED_BY_LABEL_PREFIX}{self.user_login}"
@@ -294,6 +304,42 @@ class PrLabeler(PrBaseClass):
 
     def add_welcome_comment(self) -> None:
         self.pr.create_issue_comment(body=WELCOME_COMMENT)
+
+    def set_check_queued(self, check_run_name: str) -> None:
+        """Based on https://github.com/myk-org/github-webhook-server"""
+        return self.set_check_run_status(check_run_name=check_run_name, status=QUEUED_STR)
+
+    def set_check_success(self, check_run_name: str) -> None:
+        """Based on https://github.com/myk-org/github-webhook-server"""
+        return self.set_check_run_status(check_run_name=check_run_name, conclusion=SUCCESS_STR)
+
+    def set_check_run_status(
+        self,
+        check_run_name: str,
+        status: str = "",
+        conclusion: str = "",
+    ) -> None:
+        """Based on https://github.com/myk-org/github-webhook-server"""
+        kwargs: dict[str, Any] = {"name": check_run_name, "head_sha": os.environ["GITHUB_SHA"]}
+
+        if status:
+            kwargs["status"] = status
+
+        if conclusion:
+            kwargs["conclusion"] = conclusion
+
+        LOGGER.info(f"check run {check_run_name} status: {status or conclusion}")
+
+        try:
+            self.repo.create_check_run(**kwargs)
+            if conclusion == SUCCESS_STR:
+                LOGGER.info(f"Successfully ran {check_run}")  # type: ignore
+            return
+
+        except Exception as ex:
+            LOGGER.error(f"Failed to set {check_run_name} check to {status or conclusion}, {ex}")
+            kwargs["conclusion"] = FAILURE_STR
+            self.repo.create_check_run(**kwargs)
 
 
 def main() -> None:
