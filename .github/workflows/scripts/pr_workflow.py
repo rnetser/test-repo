@@ -120,9 +120,11 @@ def add_remove_pr_labels(
         LOGGER.info("Synchronize event")
         for label in pr_labels:
             LOGGER.info(f"Processing label: {label}")
-            if label.lower() == VERIFIED_LABEL_STR or label.lower().startswith(
-                LGTM_BY_LABEL_PREFIX
-            ) or label.lower().startswith(CHANGED_REQUESTED_BY_LABEL_PREFIX):
+            if (
+                label.lower() == VERIFIED_LABEL_STR
+                or label.lower().startswith(LGTM_BY_LABEL_PREFIX)
+                or label.lower().startswith(CHANGED_REQUESTED_BY_LABEL_PREFIX)
+            ):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
@@ -132,36 +134,42 @@ def add_remove_pr_labels(
 
         # Searches for `supported_labels` in PR comment and splits to tuples;
         # index 0 is label, index 1 (optional) `cancel`
-        user_requested_labels: list[tuple[str, str]] = re.findall(
+        if user_requested_labels := re.findall(
             rf"({'|'.join(SUPPORTED_LABELS)})\s*(cancel)?", comment_body.lower()
-        )
+        ):
+            LOGGER.info(f"User labels: {user_requested_labels}")
 
-        LOGGER.info(f"User labels: {user_requested_labels}")
+            # In case of the same label appears multiple times, the last one is used
+            labels: dict[str, dict[str, bool]] = {}
+            for _label in user_requested_labels:
+                labels[_label[0].replace(LABEL_PREFIX, "")] = {
+                    CANCEL_ACTION: _label[1] == CANCEL_ACTION
+                }
 
-        # In case of the same label appears multiple times, the last one is used
-        labels: dict[str, dict[str, bool]] = {}
-        for _label in user_requested_labels:
-            labels[_label[0].replace(LABEL_PREFIX, "")] = {
-                CANCEL_ACTION: _label[1] == CANCEL_ACTION
-            }
+            LOGGER.info(f"Processing labels: {labels}")
+            for label, action in labels.items():
+                if label == LGTM_LABEL_STR:
+                    label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
 
-        LOGGER.info(f"Processing labels: {labels}")
-        for label, action in labels.items():
-            if label == LGTM_LABEL_STR:
-                label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
+                label_in_pr = any([label == _label.lower() for _label in pr_labels])
+                LOGGER.info(f"Processing label: {label}, action: {action}")
 
-            label_in_pr = any([label == _label.lower() for _label in pr_labels])
-            LOGGER.info(f"Processing label: {label}, action: {action}")
+                if action[CANCEL_ACTION] or event_action == "deleted":
+                    if label_in_pr:
+                        LOGGER.info(f"Removing label {label}")
+                        pr.remove_from_labels(label)
 
-            if action[CANCEL_ACTION] or event_action == "deleted":
-                if label_in_pr:
-                    LOGGER.info(f"Removing label {label}")
-                    pr.remove_from_labels(label)
+                elif not label_in_pr:
+                    LOGGER.info(f"Adding label {label}")
+                    set_label_in_repository(repository=repository, label=label)
+                    pr.add_to_labels(label)
 
-            elif not label_in_pr:
-                LOGGER.info(f"Adding label {label}")
-                set_label_in_repository(repository=repository, label=label)
-                pr.add_to_labels(label)
+        else:
+            commented_by_label = f"{COMMENTED_BY_LABEL_PREFIX}{user_login}"
+            if commented_by_label not in pr_labels:
+                LOGGER.info(f"Adding label {commented_by_label}")
+                set_label_in_repository(repository=repository, label=commented_by_label)
+                pr.add_to_labels(commented_by_label)
 
         return
 
@@ -192,8 +200,9 @@ def add_remove_pr_labels(
             LOGGER.info(f"Removing review label {label_to_add}")
             pr.remove_from_labels(label_to_remove)
 
-    else:
-        LOGGER.warning("`add_remove_pr_label` called without a supported event")
+        return
+
+    LOGGER.warning("`add_remove_pr_label` called without a supported event")
 
 
 def add_welcome_comment(pr: PullRequest) -> None:
@@ -242,7 +251,10 @@ def main() -> None:
     user_login: str = ""
     review_state: str = ""
 
-    if action == labels_action_name and event_name in ("issue_comment", "pull_request_review"):
+    if action == labels_action_name and event_name in (
+        "issue_comment",
+        "pull_request_review",
+    ):
         user_login = os.getenv("GITHUB_USER_LOGIN")
         if not user_login:
             sys.exit("`GITHUB_USER_LOGIN` is not set")
