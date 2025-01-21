@@ -122,13 +122,13 @@ def add_remove_pr_labels(
             LOGGER.warning(f"label: {label}")
             if label.lower() == VERIFIED_LABEL_STR or label.lower().startswith(
                 LGTM_LABEL_STR
-            ):
+            ) or label.lower().startswith(CHANGED_REQUESTED_BY_LABEL_PREFIX):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
 
     elif event_name == "issue_comment":
-        LOGGER.info("Issue comment event")
+        LOGGER.info(f"{event_name} event")
 
         # Searches for `supported_labels` in PR comment and splits to tuples;
         # index 0 is label, index 1 (optional) `cancel`
