@@ -53,6 +53,13 @@ def get_size_label(size: int) -> str:
     return xxl_size
 
 
+def add_pr_label(repository: Repository, pr: PullRequest, label: str) -> None:
+    set_label_in_repository(repository=repository, label=label)
+
+    LOGGER.info(f"New label: {label}")
+    pr.add_to_labels(label)
+
+
 def set_label_in_repository(repository: Repository, label: str) -> None:
     label_color = [
         label_color
@@ -88,10 +95,7 @@ def set_pr_size(pr: PullRequest, repository: Repository) -> None:
             LOGGER.info(f"Removing label {label.name}")
             pr.remove_from_labels(label.name)
 
-    set_label_in_repository(repository=repository, label=size_label)
-
-    LOGGER.info(f"New label: {size_label}")
-    pr.add_to_labels(size_label)
+    add_pr_label(repository=repository, pr=pr, label=size_label)
 
 
 def add_remove_pr_labels(
@@ -119,23 +123,94 @@ def add_remove_pr_labels(
     if event_action == "synchronize":
         LOGGER.info("Synchronize event")
         for label in pr_labels:
-            LOGGER.warning(f"label: {label}")
-            if label.lower() == VERIFIED_LABEL_STR or label.lower().startswith(
-                LGTM_LABEL_STR
-            ) or label.lower().startswith(CHANGED_REQUESTED_BY_LABEL_PREFIX):
+            LOGGER.info(f"Processing label: {label}")
+            if (
+                label.lower() == VERIFIED_LABEL_STR
+                or label.lower().startswith(LGTM_BY_LABEL_PREFIX)
+                or label.lower().startswith(CHANGED_REQUESTED_BY_LABEL_PREFIX)
+            ):
                 LOGGER.info(f"Removing label {label}")
                 pr.remove_from_labels(label)
         return
 
     elif event_name == "issue_comment":
-        LOGGER.info(f"{event_name} event")
-
-        # Searches for `supported_labels` in PR comment and splits to tuples;
-        # index 0 is label, index 1 (optional) `cancel`
-        user_requested_labels: list[tuple[str, str]] = re.findall(
-            rf"({'|'.join(SUPPORTED_LABELS)})\s*(cancel)?", comment_body.lower()
+        issue_comment_label_actions(
+            comment_body=comment_body,
+            event_action=event_action,
+            event_name=event_name,
+            pr=pr,
+            pr_labels=pr_labels,
+            repository=repository,
+            user_login=user_login,
         )
 
+        return
+
+    elif event_name == "pull_request_review":
+        pull_request_review_label_actions(
+            event_name=event_name,
+            pr=pr,
+            pr_labels=pr_labels,
+            repository=repository,
+            review_state=review_state,
+            user_login=user_login,
+        )
+
+        return
+
+    LOGGER.warning("`add_remove_pr_label` called without a supported event")
+
+
+def pull_request_review_label_actions(
+    event_name: str,
+    pr: PullRequest,
+    pr_labels: list[str],
+    repository: Repository,
+    review_state: str,
+    user_login: str,
+) -> None:
+    LOGGER.info(f"{event_name} event, state: {review_state}")
+
+    lgtm_label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
+    change_requested_label = f"{CHANGED_REQUESTED_BY_LABEL_PREFIX}{user_login}"
+
+    label_to_remove = None
+    label_to_add = None
+
+    if review_state == "approved":
+        label_to_remove = change_requested_label
+        label_to_add = lgtm_label
+
+    elif review_state == "changes_requested":
+        label_to_add = change_requested_label
+        label_to_remove = lgtm_label
+
+    elif review_state == "commented":
+        label_to_add = f"{COMMENTED_BY_LABEL_PREFIX}{user_login}"
+
+    if label_to_add and label_to_add not in pr_labels:
+        add_pr_label(repository=repository, pr=pr, label=label_to_add)
+
+    if label_to_remove and label_to_remove in pr_labels:
+        LOGGER.info(f"Removing review label {label_to_add}")
+        pr.remove_from_labels(label_to_remove)
+
+
+def issue_comment_label_actions(
+    comment_body: str,
+    event_action: str,
+    event_name: str,
+    pr: PullRequest,
+    pr_labels: list[str],
+    repository: Repository,
+    user_login: str,
+) -> None:
+    LOGGER.info(f"{event_name} event")
+    # Searches for `supported_labels` in PR comment and splits to tuples;
+    # index 0 is label, index 1 (optional) `cancel`
+    if user_requested_labels := re.findall(
+        rf"({'|'.join(SUPPORTED_LABELS)})\s*(cancel)?", comment_body.lower()
+    ):
         LOGGER.info(f"User labels: {user_requested_labels}")
 
         # In case of the same label appears multiple times, the last one is used
@@ -148,7 +223,7 @@ def add_remove_pr_labels(
         LOGGER.info(f"Processing labels: {labels}")
         for label, action in labels.items():
             if label == LGTM_LABEL_STR:
-                label += f"-{user_login}"
+                label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
 
             label_in_pr = any([label == _label.lower() for _label in pr_labels])
             LOGGER.info(f"Processing label: {label}, action: {action}")
@@ -159,41 +234,12 @@ def add_remove_pr_labels(
                     pr.remove_from_labels(label)
 
             elif not label_in_pr:
-                LOGGER.info(f"Adding label {label}")
-                set_label_in_repository(repository=repository, label=label)
-                pr.add_to_labels(label)
-
-        return
-
-    elif event_name == "pull_request_review":
-        LOGGER.info(f"{event_name} event, state: {review_state}")
-        lgtm_label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
-        change_requested_label = f"{CHANGED_REQUESTED_BY_LABEL_PREFIX}{user_login}"
-        label_to_remove = None
-        label_to_add = None
-
-        if review_state == "approved":
-            label_to_remove = change_requested_label
-            label_to_add = lgtm_label
-
-        elif review_state == "changes_requested":
-            label_to_add = change_requested_label
-            label_to_remove = lgtm_label
-
-        elif review_state == "commented":
-            label_to_add = f"{COMMENTED_BY_LABEL_PREFIX}{user_login}"
-
-        if label_to_add and label_to_add not in pr_labels:
-            LOGGER.info(f"Adding review label {label_to_add}")
-            set_label_in_repository(repository=repository, label=label_to_add)
-            pr.add_to_labels(label_to_add)
-
-        if label_to_remove and label_to_remove in pr_labels:
-            LOGGER.info(f"Removing review label {label_to_add}")
-            pr.remove_from_labels(label_to_remove)
+                add_pr_label(repository=repository, pr=pr, label=label)
 
     else:
-        LOGGER.warning("`add_remove_pr_label` called without a supported event")
+        commented_by_label = f"{COMMENTED_BY_LABEL_PREFIX}{user_login}"
+        if commented_by_label not in pr_labels:
+            add_pr_label(repository=repository, pr=pr, label=commented_by_label)
 
 
 def add_welcome_comment(pr: PullRequest) -> None:
@@ -242,7 +288,10 @@ def main() -> None:
     user_login: str = ""
     review_state: str = ""
 
-    if action == labels_action_name and event_name in ("issue_comment", "pull_request_review"):
+    if action == labels_action_name and event_name in (
+        "issue_comment",
+        "pull_request_review",
+    ):
         user_login = os.getenv("GITHUB_USER_LOGIN")
         if not user_login:
             sys.exit("`GITHUB_USER_LOGIN` is not set")
