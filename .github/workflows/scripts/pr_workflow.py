@@ -166,10 +166,13 @@ def pull_request_review_label_actions(
     user_login: str,
 ) -> None:
     LOGGER.info(f"{event_name} event, state: {review_state}")
+
     lgtm_label = f"{LGTM_BY_LABEL_PREFIX}{user_login}"
     change_requested_label = f"{CHANGED_REQUESTED_BY_LABEL_PREFIX}{user_login}"
+
     label_to_remove = None
     label_to_add = None
+
     if review_state == "approved":
         label_to_remove = change_requested_label
         label_to_add = lgtm_label
