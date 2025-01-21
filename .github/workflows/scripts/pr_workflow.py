@@ -53,6 +53,13 @@ def get_size_label(size: int) -> str:
     return xxl_size
 
 
+def add_pr_label(repository: Repository, pr: PullRequest, label: str) -> None:
+    set_label_in_repository(repository=repository, label=label)
+
+    LOGGER.info(f"New label: {label}")
+    pr.add_to_labels(label)
+
+
 def set_label_in_repository(repository: Repository, label: str) -> None:
     label_color = [
         label_color
@@ -88,10 +95,7 @@ def set_pr_size(pr: PullRequest, repository: Repository) -> None:
             LOGGER.info(f"Removing label {label.name}")
             pr.remove_from_labels(label.name)
 
-    set_label_in_repository(repository=repository, label=size_label)
-
-    LOGGER.info(f"New label: {size_label}")
-    pr.add_to_labels(size_label)
+    add_pr_label(repository=repository, pr=pr, label=size_label)
 
 
 def add_remove_pr_labels(
@@ -185,9 +189,7 @@ def pull_request_review_label_actions(
         label_to_add = f"{COMMENTED_BY_LABEL_PREFIX}{user_login}"
 
     if label_to_add and label_to_add not in pr_labels:
-        LOGGER.info(f"Adding review label {label_to_add}")
-        set_label_in_repository(repository=repository, label=label_to_add)
-        pr.add_to_labels(label_to_add)
+        add_pr_label(repository=repository, pr=pr, label=label_to_add)
 
     if label_to_remove and label_to_remove in pr_labels:
         LOGGER.info(f"Removing review label {label_to_add}")
@@ -232,16 +234,12 @@ def issue_comment_label_actions(
                     pr.remove_from_labels(label)
 
             elif not label_in_pr:
-                LOGGER.info(f"Adding label {label}")
-                set_label_in_repository(repository=repository, label=label)
-                pr.add_to_labels(label)
+                add_pr_label(repository=repository, pr=pr, label=label)
 
     else:
         commented_by_label = f"{COMMENTED_BY_LABEL_PREFIX}{user_login}"
         if commented_by_label not in pr_labels:
-            LOGGER.info(f"Adding label {commented_by_label}")
-            set_label_in_repository(repository=repository, label=commented_by_label)
-            pr.add_to_labels(commented_by_label)
+            add_pr_label(repository=repository, pr=pr, label=commented_by_label)
 
 
 def add_welcome_comment(pr: PullRequest) -> None:
