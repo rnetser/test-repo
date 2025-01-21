@@ -7,9 +7,9 @@ LGTM_LABEL_STR: str = "lgtm"
 VERIFIED_LABEL_STR: str = "verified"
 HOLD_LABEL_STR: str = "hold"
 APPROVED_BY_LABEL_PREFIX: str = "approved-"
-LGTM_BY_LABEL_PREFIX: str = f"{LGTM_LABEL_STR}-"
-CHANGED_REQUESTED_BY_LABEL_PREFIX: str = "changes-requested-"
-COMMENTED_BY_LABEL_PREFIX: str = "commented-"
+LGTM_BY_LABEL_PREFIX: str = f"{LGTM_LABEL_STR}-by-"
+CHANGED_REQUESTED_BY_LABEL_PREFIX: str = "changes-requested-by-"
+COMMENTED_BY_LABEL_PREFIX: str = "commented-by-"
 
 
 
