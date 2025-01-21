@@ -192,7 +192,8 @@ def add_remove_pr_labels(
             LOGGER.info(f"Removing review label {label_to_add}")
             pr.remove_from_labels(label_to_remove)
 
-    LOGGER.warning("`add_remove_pr_label` called without a supported event")
+    else:
+        LOGGER.warning("`add_remove_pr_label` called without a supported event")
 
 
 def add_welcome_comment(pr: PullRequest) -> None:
@@ -242,17 +243,19 @@ def main() -> None:
     review_state: str = ""
 
     if action == labels_action_name and event_name in ("issue_comment", "pull_request_review"):
-        comment_body = os.getenv("COMMENT_BODY") or comment_body
-        if not comment_body:
-            sys.exit("`COMMENT_BODY` is not set")
-
         user_login = os.getenv("GITHUB_USER_LOGIN")
         if not user_login:
             sys.exit("`GITHUB_USER_LOGIN` is not set")
 
-        review_state = os.getenv("GITHUB_EVENT_REVIEW_STATE")
-        if not review_state:
-            sys.exit("`GITHUB_EVENT_REVIEW_STATE` is not set")
+        if event_name == "issue_comment":
+            comment_body = os.getenv("COMMENT_BODY") or comment_body
+            if not comment_body:
+                sys.exit("`COMMENT_BODY` is not set")
+
+        if event_name == "pull_request_review":
+            review_state = os.getenv("GITHUB_EVENT_REVIEW_STATE")
+            if not review_state:
+                sys.exit("`GITHUB_EVENT_REVIEW_STATE` is not set")
 
     gh_client: Github = Github(github_token)
     repo: Repository = gh_client.get_repo(repo_name)
