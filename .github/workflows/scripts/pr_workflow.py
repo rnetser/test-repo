@@ -80,7 +80,7 @@ class PrLabeler(PrBaseClass):
         self.user_login = os.getenv("GITHUB_USER_LOGIN")
         self.review_state = os.getenv("GITHUB_EVENT_REVIEW_STATE")
         self.comment_body = os.getenv("COMMENT_BODY")
-        self.pull_request_sha = os.getenv("GITHUB_REF")
+        self.pull_request_sha = os.getenv("GITHUB_SHA")
 
         self.verify_labeler_config()
 
