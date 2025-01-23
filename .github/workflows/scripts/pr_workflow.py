@@ -80,7 +80,7 @@ class PrLabeler(PrBaseClass):
         self.user_login = os.getenv("GITHUB_USER_LOGIN")
         self.review_state = os.getenv("GITHUB_EVENT_REVIEW_STATE")
         self.comment_body = os.getenv("COMMENT_BODY")
-        self.pull_request_sha = os.getenv("GITHUB_SHA")
+        self.pull_request_sha = os.getenv("PULL_REQUEST_SHA")
 
         self.verify_labeler_config()
 
@@ -111,7 +111,7 @@ class PrLabeler(PrBaseClass):
         )
         ):
             if not self.pull_request_sha:
-                sys.exit("`GITHUB_SHA` is not set")
+                sys.exit("`PULL_REQUEST_SHA` is not set")
 
     def run_pr_label_action(self):
         if self.action == self.SupportedActions.pr_size_action_name:
