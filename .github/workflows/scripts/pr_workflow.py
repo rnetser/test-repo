@@ -111,7 +111,7 @@ class PrLabeler(PrBaseClass):
         )
         ):
             if not self.pull_request_sha:
-                sys.exit("`PULL_REQUEST_SHA` is not set")
+                sys.exit("`GITHUB_SHA` is not set")
 
     def run_pr_label_action(self):
         if self.action == self.SupportedActions.pr_size_action_name:
