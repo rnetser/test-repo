@@ -80,7 +80,8 @@ class PrLabeler(PrBaseClass):
         self.user_login = os.getenv("GITHUB_USER_LOGIN")
         self.review_state = os.getenv("GITHUB_EVENT_REVIEW_STATE")
         self.comment_body = os.getenv("COMMENT_BODY")
-        self.pull_request_sha = os.getenv("PULL_REQUEST_SHA")
+        self.last_commit = list(self.pr.get_commits())[-1]
+        self.last_commit_sha = self.last_commit.sha
 
         self.verify_labeler_config()
 
@@ -101,17 +102,6 @@ class PrLabeler(PrBaseClass):
 
             if self.event_name == "pull_request_review" and not self.review_state:
                 sys.exit("`GITHUB_EVENT_REVIEW_STATE` is not set")
-
-        if (
-                self.action == self.SupportedActions.add_remove_labels_action_name
-                and self.event_name
-                in (
-                "issue_comment",
-                "pull_request_target",
-        )
-        ):
-            if not self.pull_request_sha:
-                sys.exit("`PULL_REQUEST_SHA` is not set")
 
     def run_pr_label_action(self):
         if self.action == self.SupportedActions.pr_size_action_name:
@@ -332,7 +322,7 @@ class PrLabeler(PrBaseClass):
         conclusion: str = "",
     ) -> None:
         """Based on https://github.com/myk-org/github-webhook-server"""
-        kwargs: dict[str, Any] = {"name": check_run_name, "head_sha": self.pull_request_sha}
+        kwargs: dict[str, Any] = {"name": check_run_name, "head_sha": self.last_commit_sha}
 
         if status:
             kwargs["status"] = status
