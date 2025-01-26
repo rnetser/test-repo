@@ -45,5 +45,5 @@ jobs:
           COMMENT_BODY: ${{ github.event.comment.body }}
           GITHUB_USER_LOGIN: ${{ github.event.sender.login }}
           ACTION: "add-remove-labels"
-          PULL_REQUEST_SHA: ${{ github.event.workflow_run.head_sha }}
+          PULL_REQUEST_SHA: ${{ github.event.pull_request.head.sha }}
         run: uv run python .github/workflows/scripts/pr_workflow.py
