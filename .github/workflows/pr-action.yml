@@ -31,9 +31,6 @@ on:
   status:
   registry_package:
   watch:
-  workflow_call:
-  workflow_run:
-  workflow_dispatch:
 
 
 
