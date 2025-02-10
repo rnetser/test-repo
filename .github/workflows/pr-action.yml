@@ -1,0 +1,53 @@
+name: "check action"
+on:
+  pull_request:
+  branch_protection_rule:
+  check_run:
+  check_suite:
+  create:
+  delete:
+  deployment:
+  deployment_status:
+  fork:
+  gollum:
+  issue_comment:
+  discussion:
+  discussion_comment:
+  issues:
+  pull_request_review:
+  pull_request_review_comment:
+  pull_request_target:
+  push:
+  release:
+  repository_dispatch:
+  label:
+  merge_group:
+  milestone:
+  page_build:
+  project:
+  project_card:
+  project_column:
+  public:
+  status:
+  registry_package:
+  watch:
+  workflow_call:
+  workflow_run:
+  workflow_dispatch:
+
+
+
+permissions: write-all
+
+jobs:
+  add-remove-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo A comment on PR $NUMBER $GITHUB_EVENT_ACTION $GITHUB_EVENT_NAME $COMMENT_BODY
+        env:
+          NUMBER: ${{ github.event.issue.number }}
+          GITHUB_EVENT_ACTION: ${{ github.event.action }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+
