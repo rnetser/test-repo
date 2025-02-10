@@ -257,7 +257,9 @@ class PrLabeler(PrBaseClass):
             label_to_add = f"{COMMENTED_BY_LABEL_PREFIX}{self.user_login}"
 
         if label_to_add and label_to_add not in self.pr_labels:
-            self.pr.create_issue_comment(body=f"{AUTO_COMMENT_PREFIX}{label_to_add}")
+            comment_body = f"{AUTO_COMMENT_PREFIX}{label_to_add}"
+            LOGGER.info(f"Adding PR comment body: {comment_body}")
+            self.pr.create_issue_comment(body=comment_body)
 
         if label_to_remove and label_to_remove in self.pr_labels:
             LOGGER.info(f"Removing review label {label_to_add}")
