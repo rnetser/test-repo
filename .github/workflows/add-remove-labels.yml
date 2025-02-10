@@ -11,12 +11,14 @@ on:
       contains(github.event.comment.body, '/wip') ||
       contains(github.event.comment.body, '/verified') ||
       contains(github.event.comment.body, '/lgtm') ||
-      contains(github.event.comment.body, '/hold')
+      contains(github.event.comment.body, '/hold') ||
+      contains(github.event.comment.body, 'auto-comment:')
 
 
 permissions:
   pull-requests: write
   contents: write
+  issues: write
 
 jobs:
   add-remove-labels:

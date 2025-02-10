@@ -1,5 +1,3 @@
-from typing import Dict
-
 LABEL_PREFIX: str = "/"
 SIZE_LABEL_PREFIX: str = f"size{LABEL_PREFIX}"
 WIP_LABEL_STR: str = "wip"
@@ -13,6 +11,7 @@ COMMENTED_BY_LABEL_PREFIX: str = "commented-by-"
 SUCCESS_STR: str = "success"
 FAILURE_STR: str = "failure"
 QUEUED_STR: str = "queued"
+AUTO_COMMENT_PREFIX: str = "auto-comment:"
 
 SUPPORTED_LABELS: set[str] = {
     f"{LABEL_PREFIX}{WIP_LABEL_STR}",
@@ -45,14 +44,14 @@ Available user actions:
 
 
 DEFAULT_LABEL_COLOR = "B60205"
-USER_LABELS_DICT: Dict[str, str] = {
+USER_LABELS_DICT: dict[str, str] = {
     HOLD_LABEL_STR: DEFAULT_LABEL_COLOR,
     VERIFIED_LABEL_STR: "0E8A16",
     WIP_LABEL_STR: DEFAULT_LABEL_COLOR,
     LGTM_LABEL_STR: "0E8A16",
 }
 
-STATIC_LABELS_DICT: Dict[str, str] = {
+STATIC_LABELS_DICT: dict[str, str] = {
     **USER_LABELS_DICT,
     f"{SIZE_LABEL_PREFIX}l": "F5621C",
     f"{SIZE_LABEL_PREFIX}m": "F09C74",
@@ -62,10 +61,10 @@ STATIC_LABELS_DICT: Dict[str, str] = {
     f"{SIZE_LABEL_PREFIX}xxl": DEFAULT_LABEL_COLOR,
 }
 
-DYNAMIC_LABELS_DICT: Dict[str, str] = {
+DYNAMIC_LABELS_DICT: dict[str, str] = {
     LGTM_BY_LABEL_PREFIX: "DCED6F",
     COMMENTED_BY_LABEL_PREFIX: "D93F0B",
     CHANGED_REQUESTED_BY_LABEL_PREFIX: "F5621C",
 }
 
-ALL_LABELS_DICT: Dict[str, str] = {**STATIC_LABELS_DICT, **DYNAMIC_LABELS_DICT}
+ALL_LABELS_DICT: dict[str, str] = {**STATIC_LABELS_DICT, **DYNAMIC_LABELS_DICT}

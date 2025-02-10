@@ -3,13 +3,24 @@ from __future__ import annotations
 import os
 import re
 import sys
-from typing import Any
+
+from github.PullRequest import PullRequest
+from github.Repository import Repository
 
 from constants import (
-    ALL_LABELS_DICT, CANCEL_ACTION, CHANGED_REQUESTED_BY_LABEL_PREFIX,
-    COMMENTED_BY_LABEL_PREFIX, DEFAULT_LABEL_COLOR, FAILURE_STR, LABEL_PREFIX,
-    LGTM_BY_LABEL_PREFIX, LGTM_LABEL_STR, QUEUED_STR, SIZE_LABEL_PREFIX, SUCCESS_STR, SUPPORTED_LABELS,
-    VERIFIED_LABEL_STR, WELCOME_COMMENT)
+    ALL_LABELS_DICT,
+    AUTO_COMMENT_PREFIX, CANCEL_ACTION,
+    CHANGED_REQUESTED_BY_LABEL_PREFIX,
+    COMMENTED_BY_LABEL_PREFIX,
+    DEFAULT_LABEL_COLOR,
+    LABEL_PREFIX,
+    LGTM_BY_LABEL_PREFIX,
+    LGTM_LABEL_STR,
+    SIZE_LABEL_PREFIX,
+    SUPPORTED_LABELS,
+    VERIFIED_LABEL_STR,
+    WELCOME_COMMENT,
+)
 from github import Github, UnknownObjectException
 from simple_logger.logger import get_logger
 
@@ -28,8 +39,8 @@ class PrBaseClass:
         }
 
     def __init__(self) -> None:
-        self.repo = None
-        self.pr = None
+        self.repo: Repository
+        self.pr: PullRequest
 
         self.repo_name = os.environ["GITHUB_REPOSITORY"]
         self.pr_number = int(os.getenv("GITHUB_PR_NUMBER", 0))
@@ -41,11 +52,8 @@ class PrBaseClass:
         self.verify_base_config()
         self.set_gh_config()
 
-    def verify_base_config(self):
-        if (
-            not self.action
-            or self.action not in self.SupportedActions.supported_actions
-        ):
+    def verify_base_config(self) -> None:
+        if not self.action or self.action not in self.SupportedActions.supported_actions:
             sys.exit(
                 "`ACTION` is not set in workflow or is not supported. "
                 f"Supported actions: {self.SupportedActions.supported_actions}"
@@ -68,10 +76,10 @@ class PrBaseClass:
             f"event_name: {self.event_name}, action: {self.action}"
         )
 
-    def set_gh_config(self):
-        gh_client: Github = Github(self.github_token)
-        self.repo = gh_client.get_repo(self.repo_name)
-        self.pr = self.repo.get_pull(self.pr_number)
+    def set_gh_config(self) -> None:
+        gh_client: Github = Github(login_or_token=self.github_token)
+        self.repo = gh_client.get_repo(full_name_or_id=self.repo_name)
+        self.pr = self.repo.get_pull(number=self.pr_number)
 
 
 class PrLabeler(PrBaseClass):
@@ -79,20 +87,16 @@ class PrLabeler(PrBaseClass):
         super().__init__()
         self.user_login = os.getenv("GITHUB_USER_LOGIN")
         self.review_state = os.getenv("GITHUB_EVENT_REVIEW_STATE")
-        self.comment_body = os.getenv("COMMENT_BODY")
+        self.comment_body = os.getenv("COMMENT_BODY", "")
         self.last_commit = list(self.pr.get_commits())[-1]
         self.last_commit_sha = self.last_commit.sha
 
         self.verify_labeler_config()
 
-    def verify_labeler_config(self):
-        if (
-            self.action == self.SupportedActions.add_remove_labels_action_name
-            and self.event_name
-            in (
-                "issue_comment",
-                "pull_request_review",
-            )
+    def verify_labeler_config(self) -> None:
+        if self.action == self.SupportedActions.add_remove_labels_action_name and self.event_name in (
+            "issue_comment",
+            "pull_request_review",
         ):
             if not self.user_login:
                 sys.exit("`GITHUB_USER_LOGIN` is not set")
@@ -103,7 +107,7 @@ class PrLabeler(PrBaseClass):
             if self.event_name == "pull_request_review" and not self.review_state:
                 sys.exit("`GITHUB_EVENT_REVIEW_STATE` is not set")
 
-    def run_pr_label_action(self):
+    def run_pr_label_action(self) -> None:
         if self.action == self.SupportedActions.pr_size_action_name:
             self.set_pr_size()
 
@@ -148,9 +152,7 @@ class PrLabeler(PrBaseClass):
 
     def set_label_in_repository(self, label: str) -> None:
         label_color = [
-            label_color
-            for label_prefix, label_color in ALL_LABELS_DICT.items()
-            if label.startswith(label_prefix)
+            label_color for label_prefix, label_color in ALL_LABELS_DICT.items() if label.startswith(label_prefix)
         ]
         label_color = label_color[0] if label_color else DEFAULT_LABEL_COLOR
 
@@ -178,7 +180,7 @@ class PrLabeler(PrBaseClass):
 
             if label.name.lower().startswith(SIZE_LABEL_PREFIX):
                 LOGGER.info(f"Removing label {label.name}")
-                self.pr.remove_from_labels(label.name)
+                self.pr.remove_from_labels(label=label.name)
 
         self.add_pr_label(label=size_label)
 
@@ -190,9 +192,15 @@ class PrLabeler(PrBaseClass):
         return pr_labels
 
     def add_remove_pr_labels(self) -> None:
-        if self.comment_body and WELCOME_COMMENT in self.comment_body:
-            LOGGER.info(f"Welcome message found in PR {self.pr.title}. Not processing")
-            return
+        if self.comment_body:
+            if WELCOME_COMMENT in self.comment_body:
+                LOGGER.info(f"Welcome message found in PR {self.pr.title}. Not processing")
+                return
+
+            if AUTO_COMMENT_PREFIX in self.comment_body:
+                LOGGER.info(f"Auto comment found in PR {self.pr.title}.")
+                self.add_pr_label(label=self.comment_body.split(AUTO_COMMENT_PREFIX)[1])
+                return
 
         LOGGER.info(
             f"add_remove_pr_label comment_body: {self.comment_body} event_name:{self.event_name} "
@@ -210,7 +218,7 @@ class PrLabeler(PrBaseClass):
                     or label.lower().startswith(CHANGED_REQUESTED_BY_LABEL_PREFIX)
                 ):
                     LOGGER.info(f"Removing label {label}")
-                    self.pr.remove_from_labels(label)
+                    self.pr.remove_from_labels(label=label)
 
             return
 
@@ -249,11 +257,13 @@ class PrLabeler(PrBaseClass):
             label_to_add = f"{COMMENTED_BY_LABEL_PREFIX}{self.user_login}"
 
         if label_to_add and label_to_add not in self.pr_labels:
-            self.add_pr_label(label=label_to_add)
+            comment_body = f"{AUTO_COMMENT_PREFIX} {label_to_add}"
+            LOGGER.info(f"Adding PR comment body: {comment_body}")
+            self.pr.create_issue_comment(body=comment_body)
 
         if label_to_remove and label_to_remove in self.pr_labels:
             LOGGER.info(f"Removing review label {label_to_add}")
-            self.pr.remove_from_labels(label_to_remove)
+            self.pr.remove_from_labels(label=label_to_remove)
 
     def issue_comment_label_actions(
         self,
@@ -269,24 +279,20 @@ class PrLabeler(PrBaseClass):
             # In case of the same label appears multiple times, the last one is used
             labels: dict[str, dict[str, bool]] = {}
             for _label in user_requested_labels:
-                labels[_label[0].replace(LABEL_PREFIX, "")] = {
-                    CANCEL_ACTION: _label[1] == CANCEL_ACTION
-                }
+                labels[_label[0].replace(LABEL_PREFIX, "")] = {CANCEL_ACTION: _label[1] == CANCEL_ACTION}
 
             LOGGER.info(f"Processing labels: {labels}")
             for label, action in labels.items():
                 if label == LGTM_LABEL_STR:
                     label = f"{LGTM_BY_LABEL_PREFIX}{self.user_login}"
 
-                label_in_pr = any(
-                    [label == _label.lower() for _label in self.pr_labels]
-                )
+                label_in_pr = any([label == _label.lower() for _label in self.pr_labels])
                 LOGGER.info(f"Processing label: {label}, action: {action}")
 
                 if action[CANCEL_ACTION] or self.event_action == "deleted":
                     if label_in_pr:
                         LOGGER.info(f"Removing label {label}")
-                        self.pr.remove_from_labels(label)
+                        self.pr.remove_from_labels(label=label)
 
                 elif not label_in_pr:
                     self.add_pr_label(label=label)
