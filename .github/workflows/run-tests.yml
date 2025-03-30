@@ -27,11 +27,16 @@ jobs:
 
       - name: Export kubeconfig
         run: |
-          kind get kubeconfig --name "kind" --internal | sed "s/kind-control-plane/$(docker inspect "kind-control-plane" --format "{{ .NetworkSettings.Networks.kind.IPAddress }}")/g" >$HOME/kubeconfig
+          kind get kubeconfig --name "kind" --internal | sed "s/kind-control-plane/$(docker inspect "kind-control-plane" --format "{{ .NetworkSettings.Networks.kind.IPAddress }}")/g" >$HOME/.kube/config
 
-      - name: Check podman
-        run: podman version
+#      - name: Check podman
+#        run: podman version
+#
+#      - name: Run tests
+#        run: |
+#          podman run  -v $HOME:/mnt/host:Z  -e KUBECONFIG=/mnt/host/kubeconfig  quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
 
-      - name: Run tests
-        run: |
-          podman run  -v $HOME:/mnt/host:Z  -e KUBECONFIG=/mnt/host/kubeconfig  quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
+      - uses: actions/checkout@master
+        with:
+          repository: opendatahub-io/opendatahub-tests
+          ref: refs/heads/release
