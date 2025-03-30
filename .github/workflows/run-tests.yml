@@ -50,4 +50,4 @@ jobs:
 
       - name: Run tests
         run: |
-          uv run pytest -k kserve-controller-manager
+          uv run python 
