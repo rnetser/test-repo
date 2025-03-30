@@ -25,9 +25,13 @@ jobs:
       - name: Create kind cluster
         run: kind create cluster
 
+      - name: Export kubeconfig
+        run: |
+          kind get kubeconfig --internal >$HOME/kubeconfig        
+
       - name: Check podman
         run: podman version
 
       - name: Run tests
         run: |
-          podman run quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
+          podman run  -v $HOME:/mnt/host:Z  -e KUBECONFIG=/mnt/host/kubeconfig  quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
