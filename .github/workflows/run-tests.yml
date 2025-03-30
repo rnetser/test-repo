@@ -13,9 +13,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check podman
-        run: podman version
-
-      - name: Run tests
+      - name: Install the latest version of kind
         run: |
-          podman run quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Export kubeconfig
+        run: |
+          kind get kubeconfig --internal >$HOME/kubeconfig
+
+#      - name: Check podman
+#        run: podman version
+#
+#      - name: Run tests
+#        run: |
+#          podman run  -v $HOME:/mnt/host:Z  -e KUBECONFIG=/mnt/host/kubeconfig  quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: clone tests
+        run: |
+          git clone https://github.com/opendatahub-io/opendatahub-tests.git
+          cd opendatahub-tests
+          uv sync
+          uv run pytest -k kserve-controller-manager 
