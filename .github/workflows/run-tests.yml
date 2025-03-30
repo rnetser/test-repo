@@ -28,7 +28,6 @@ jobs:
       - name: Export kubeconfig
         run: |
           kind get kubeconfig --internal >$HOME/kubeconfig
-          cat $HOME/kubeconfig
 
 #      - name: Check podman
 #        run: podman version
@@ -37,12 +36,17 @@ jobs:
 #        run: |
 #          podman run  -v $HOME:/mnt/host:Z  -e KUBECONFIG=/mnt/host/kubeconfig  quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
       - name: clone tests
         run: |
           git clone https://github.com/opendatahub-io/opendatahub-tests.git
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: init uv
+        run: |
+          uv init
+          uv sync
 
       - name: Run tests
         run: |
