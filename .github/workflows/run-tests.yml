@@ -1,0 +1,21 @@
+name: Run tests
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  pull-requests: write
+  contents: write
+
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check podman
+        run: podman version
+
+      - name: Run tests
+        run: |
+          podman run quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
