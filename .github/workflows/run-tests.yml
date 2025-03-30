@@ -36,15 +36,13 @@ jobs:
 #        run: |
 #          podman run  -v $HOME:/mnt/host:Z  -e KUBECONFIG=/mnt/host/kubeconfig  quay.io/opendatahub/opendatahub-tests -k kserve-controller-manager
 
-      - name: clone tests
-        run: |
-          git clone https://github.com/opendatahub-io/opendatahub-tests.git
-
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Run tests
+      - name: clone tests
         run: |
+          git clone https://github.com/opendatahub-io/opendatahub-tests.git
+          cd opendatahub-tests
           uv init
           uv sync
           uv run pytest -k kserve-controller-manager 
