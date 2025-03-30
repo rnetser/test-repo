@@ -27,7 +27,8 @@ jobs:
 
       - name: Export kubeconfig
         run: |
-          kind get kubeconfig --internal >$HOME/kubeconfig        
+          kind get kubeconfig --internal >$HOME/kubeconfig
+          cat $HOME/kubeconfig
 
       - name: Check podman
         run: podman version
